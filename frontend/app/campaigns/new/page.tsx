@@ -2,26 +2,32 @@
 
 import { useState } from 'react'
 import { createCampaign } from '../../../lib/api'
-import { getToken, getUser } from '../../../utils/auth'
+import { useAuth } from '../../../contexts/AuthContext'
+import ProtectedPage from '../../../components/ProtectedPage'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function NewCampaignPage() {
+function NewCampaignPageContent() {
   const router = useRouter()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [goalAmount, setGoalAmount] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [loading, setLoading] = useState(false)
-  const token = getToken()
-  const currentUser = getUser()
+  const { user: currentUser } = useAuth()
   const isAdmin = currentUser?.role === 'ADMIN'
 
   async function handleSubmit(e: any) {
     e.preventDefault()
+    const token = localStorage.getItem("token");
     if (!token) {
       alert('Please login to create a campaign')
       router.push('/auth/login')
+      return
+    }
+
+    if (!isAdmin) {
+      alert('Only administrators can create campaigns')
       return
     }
 
@@ -49,18 +55,13 @@ export default function NewCampaignPage() {
     }
   }
 
-  if (!token || !isAdmin) {
+  if (!isAdmin) {
     return (
       <main className="p-8 min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
-          <p className="mb-4">
-            {token ? 'Only administrators can create campaigns.' : 'Please login to create a campaign'}
-          </p>
-          <Link
-            href={token ? '/' : '/auth/login'}
-            className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded"
-          >
-            {token ? 'Go Back' : 'Login'}
+          <p className="mb-4">Only administrators can create campaigns.</p>
+          <Link href="/" className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded">
+            Go Back
           </Link>
         </div>
       </main>
@@ -129,5 +130,13 @@ export default function NewCampaignPage() {
         </form>
       </div>
     </main>
+  )
+}
+
+export default function NewCampaignPage() {
+  return (
+    <ProtectedPage requiredRole="ADMIN">
+      <NewCampaignPageContent />
+    </ProtectedPage>
   )
 }
