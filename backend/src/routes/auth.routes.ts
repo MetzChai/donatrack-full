@@ -1,32 +1,36 @@
 import { Router } from "express";
 import passport from "../config/passport";
-import { register, login, googleAuthRedirect } from "../controllers/auth.controller";
+import { register, login, googleAuthRedirect, getCurrentUser, forgotPassword, resetPassword } from "../controllers/auth.controller";
+import { protect } from "../middleware/auth.middleware";
 
 const router = Router();
-const googleConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 const failureRedirect = `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/login?error=google`;
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+router.get("/me", protect(), getCurrentUser);
 
-if (googleConfigured) {
-  router.get(
-    "/google",
-    passport.authenticate("google", { scope: ["profile", "email"], session: false })
-  );
+// Test route to verify auth routes are working
+router.get("/test", (_req, res) => {
+  res.json({ message: "Auth routes are working", path: "/api/auth/v1/test" });
+});
 
-  router.get(
-    "/google/callback",
-    passport.authenticate("google", { session: false, failureRedirect }),
-    googleAuthRedirect
-  );
-} else {
-  router.get("/google", (_req, res) => {
-    res.status(503).json({ error: "Google OAuth is not configured" });
-  });
-  router.get("/google/callback", (_req, res) => {
-    res.redirect(failureRedirect);
-  });
-}
+// Google OAuth routes
+router.get(
+  "/google",
+  (req, res, next) => {
+    console.log("Google OAuth route hit:", req.url);
+    next();
+  },
+  passport.authenticate("google", { scope: ["profile", "email"], session: false })
+);
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false, failureRedirect }),
+  googleAuthRedirect
+);
 
 export default router;

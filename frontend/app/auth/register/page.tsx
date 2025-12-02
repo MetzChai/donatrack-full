@@ -2,17 +2,19 @@
 
 import { useState } from "react";
 import { registerUser } from "../../../lib/api";
-import { setToken, setUser } from "../../../utils/auth";
+import { useAuth } from "../../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import GuestPage from "../../../components/GuestPage";
 
-export default function RegisterPage() {
+function RegisterPageContent() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login, refreshUser } = useAuth();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,12 +23,35 @@ export default function RegisterPage() {
 
     try {
       const { token, user } = await registerUser({ fullName, email, password });
-      setToken(token);
-      setUser(user);
-      router.push("/");
+      
+      // Verify token and user are received
+      if (!token || !user) {
+        throw new Error("Invalid response from server");
+      }
+      
+      // Set token and user in localStorage first - do this synchronously
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+      
+      // Update context state
+      login(token, user);
+      
+      // Verify token was saved
+      const savedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!savedToken) {
+        console.error("Token was not saved to localStorage");
+        throw new Error("Failed to save authentication token");
+      }
+      
+      // Wait a bit for state to propagate
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
+      // New users are always USER role, redirect to home
+      router.replace("/");
     } catch (err: any) {
       setError(err.error || "Registration failed. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -104,5 +129,13 @@ export default function RegisterPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <GuestPage>
+      <RegisterPageContent />
+    </GuestPage>
   );
 }

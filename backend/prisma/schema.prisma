@@ -16,13 +16,17 @@ model User {
   createdAt DateTime @default(now())
 
   // Platform-handled funds (Option 2)
-  currentFunds    Float @default(0)
+  currentFunds      Float @default(0)
   withdrawableFunds Float @default(0)
 
   // Xendit API keys (Option 1) - for campaign creators
   xenditApiKey    String?
   xenditSecretKey String?
   xenditClientKey String?
+
+  // Password reset fields
+  resetPasswordToken  String?
+  resetPasswordExpiry DateTime?
 
   campaigns Campaign[]
   donations Donation[]
@@ -50,15 +54,15 @@ model Campaign {
 }
 
 model Donation {
-  id        String   @id @default(cuid())
-  amount    Float
-  method    String   // Payment method (GCash, Credit Card, etc.)
-  paymentProvider String @default("XENDIT") // Xendit as payment provider
+  id              String   @id @default(cuid())
+  amount          Float
+  method          String // Payment method (GCash, Credit Card, etc.)
+  paymentProvider String   @default("XENDIT") // Xendit as payment provider
   xenditPaymentId String? // Xendit payment reference
-  message   String? // Optional support message
-  isAnonymous Boolean @default(false)
-  status    String   @default("PENDING") // PENDING, COMPLETED, FAILED
-  createdAt DateTime @default(now())
+  message         String? // Optional support message
+  isAnonymous     Boolean  @default(false)
+  status          String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  createdAt       DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id])
   userId String

@@ -1,41 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { getUser, logout } from "../utils/auth";
+import { useAuth } from "../contexts/AuthContext";
 import { usePathname } from "next/navigation";
 
 export default function Header() {
-  const [user, setUser] = useState<any>(null);
-  const [mounted, setMounted] = useState(false);
+  const { user, logout } = useAuth();
   const pathname = usePathname();
-
-  useEffect(() => {
-    setMounted(true);
-    setUser(getUser());
-  }, []);
 
   const handleLogout = () => {
     logout();
-    setUser(null);
   };
 
   const isActive = (path: string) => pathname === path;
-
-  if (!mounted) {
-    return (
-      <header className="bg-purple-900 text-white">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex justify-between items-center">
-            <div className="font-bold text-xl">DONATRACK</div>
-            <Link href="/auth/login" className="text-sm hover:text-gray-300">
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </header>
-    );
-  }
 
   return (
     <header className="bg-purple-900 text-white">

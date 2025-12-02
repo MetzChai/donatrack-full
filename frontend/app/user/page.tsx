@@ -9,10 +9,11 @@ import {
   updateXenditKeys,
   endCampaign,
 } from "@/lib/api";
-import { getToken, getUser } from "@/utils/auth";
+import { useAuth } from "@/contexts/AuthContext";
+import ProtectedPage from "@/components/ProtectedPage";
 import Link from "next/link";
 
-export default function UserDashboard() {
+function UserDashboardContent() {
   const [donations, setDonations] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [funds, setFunds] = useState<any>(null);
@@ -25,28 +26,21 @@ export default function UserDashboard() {
     xenditClientKey: "",
   });
 
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const token = getToken();
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
-    setCurrentUser(getUser());
-  }, []);
-
-  useEffect(() => {
-    if (!token) {
-      window.location.href = "/auth/login";
-      return;
-    }
+    const token = localStorage.getItem("token");
+    if (!token || !currentUser) return;
 
     async function fetchData() {
       try {
-        const donationsData = await getMyDonations(token!);
+        const donationsData = await getMyDonations(token);
         setDonations(donationsData);
 
-        if (currentUser?.role === "ADMIN") {
+        if (currentUser.role === "ADMIN") {
           const [campaignsData, fundsData] = await Promise.all([
-            getMyCampaigns(token!),
-            getMyFunds(token!),
+            getMyCampaigns(token),
+            getMyFunds(token),
           ]);
           setCampaigns(campaignsData);
           setFunds(fundsData);
@@ -61,9 +55,12 @@ export default function UserDashboard() {
       }
     }
     fetchData();
-  }, [token, currentUser?.role]);
+  }, [currentUser]);
 
   const handleWithdraw = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
     const amount = parseFloat(withdrawAmount);
     if (!amount || amount <= 0) {
       alert("Please enter a valid amount");
@@ -76,8 +73,8 @@ export default function UserDashboard() {
     }
 
     try {
-      await withdrawFunds(amount, token!);
-      const updatedFunds = await getMyFunds(token!);
+      await withdrawFunds(amount, token);
+      const updatedFunds = await getMyFunds(token);
       setFunds(updatedFunds);
       setWithdrawAmount("");
       alert("Withdrawal request processed successfully");
@@ -87,8 +84,11 @@ export default function UserDashboard() {
   };
 
   const handleUpdateXenditKeys = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
     try {
-      await updateXenditKeys(xenditKeys, token!);
+      await updateXenditKeys(xenditKeys, token);
       setShowXenditKeys(false);
       setXenditKeys({ xenditApiKey: "", xenditSecretKey: "", xenditClientKey: "" });
       alert("Xendit keys updated successfully");
@@ -102,9 +102,12 @@ export default function UserDashboard() {
       return;
     }
 
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
     try {
-      await endCampaign(campaignId, token!);
-      const updatedCampaigns = await getMyCampaigns(token!);
+      await endCampaign(campaignId, token);
+      const updatedCampaigns = await getMyCampaigns(token);
       setCampaigns(updatedCampaigns);
       alert("Campaign ended successfully");
     } catch (err: any) {
@@ -346,5 +349,13 @@ export default function UserDashboard() {
         )}
       </section>
     </main>
+  );
+}
+
+export default function UserDashboard() {
+  return (
+    <ProtectedPage>
+      <UserDashboardContent />
+    </ProtectedPage>
   );
 }

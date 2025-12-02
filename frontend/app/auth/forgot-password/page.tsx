@@ -2,22 +2,30 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import GuestPage from "../../../components/GuestPage";
+import { forgotPassword } from "../../../lib/api";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordPageContent() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
+    setError("");
 
-    // TODO: Implement password reset API call
-    setTimeout(() => {
-      setMessage("Password reset link has been sent to your email.");
+    try {
+      await forgotPassword(email);
+      setMessage("If that email exists, a password reset link has been sent to your email.");
+      setEmail("");
+    } catch (err: any) {
+      setError(err.error || "Failed to send password reset email. Please try again.");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -57,6 +65,12 @@ export default function ForgotPasswordPage() {
             </div>
           </div>
 
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              {error}
+            </div>
+          )}
+
           {message && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
               {message}
@@ -80,6 +94,14 @@ export default function ForgotPasswordPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <GuestPage>
+      <ForgotPasswordPageContent />
+    </GuestPage>
   );
 }
 

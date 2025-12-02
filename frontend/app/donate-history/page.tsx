@@ -2,20 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { getMyDonations } from "../../lib/api";
-import { getToken } from "../../utils/auth";
+import { useAuth } from "../../contexts/AuthContext";
+import ProtectedPage from "../../components/ProtectedPage";
 import Link from "next/link";
 
-export default function DonateHistory() {
+function DonateHistoryContent() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const token = getToken();
+  const { user } = useAuth();
 
   useEffect(() => {
     async function load() {
-      if (!token) {
-        window.location.href = "/auth/login";
-        return;
-      }
+      const token = localStorage.getItem("token");
+      if (!token) return;
       try {
         const data = await getMyDonations(token);
         setLogs(data);
@@ -25,8 +24,10 @@ export default function DonateHistory() {
         setLoading(false);
       }
     }
-    load();
-  }, [token]);
+    if (user) {
+      load();
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -95,5 +96,13 @@ export default function DonateHistory() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function DonateHistory() {
+  return (
+    <ProtectedPage>
+      <DonateHistoryContent />
+    </ProtectedPage>
   );
 }

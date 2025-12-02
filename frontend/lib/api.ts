@@ -15,7 +15,7 @@ const getAuthHeaders = (token?: string) => {
 // Auth APIs
 export const registerUser = async (data: any) => {
   try {
-    const res = await API.post("/auth/register", data);
+    const res = await API.post("/api/auth/v1/register", data);
     return res.data;
   } catch (err: any) {
     console.error("Registration failed:", err);
@@ -25,10 +25,40 @@ export const registerUser = async (data: any) => {
 
 export const loginUser = async (data: any) => {
   try {
-    const res = await API.post("/auth/login", data);
+    const res = await API.post("/api/auth/v1/login", data);
     return res.data;
   } catch (err: any) {
     console.error("Login failed:", err);
+    throw err.response?.data || err;
+  }
+};
+
+export const forgotPassword = async (email: string) => {
+  try {
+    const res = await API.post("/api/auth/v1/forgot-password", { email });
+    return res.data;
+  } catch (err: any) {
+    console.error("Forgot password failed:", err);
+    throw err.response?.data || err;
+  }
+};
+
+export const resetPassword = async (token: string, password: string) => {
+  try {
+    const res = await API.post("/api/auth/v1/reset-password", { token, password });
+    return res.data;
+  } catch (err: any) {
+    console.error("Reset password failed:", err);
+    throw err.response?.data || err;
+  }
+};
+
+export const getCurrentUser = async (token: string) => {
+  try {
+    const res = await API.get("/api/auth/v1/me", getAuthHeaders(token));
+    return res.data;
+  } catch (err: any) {
+    console.error("Failed to fetch current user:", err);
     throw err.response?.data || err;
   }
 };
@@ -193,6 +223,37 @@ export const deleteUser = async (userId: string, token: string) => {
     return res.data;
   } catch (err: any) {
     console.error("Failed to delete user:", err);
+    throw err.response?.data || err;
+  }
+};
+
+// Admin Campaign APIs
+export const getActiveCampaigns = async (token: string) => {
+  try {
+    const res = await API.get("/admin/campaigns/active", getAuthHeaders(token));
+    return res.data || [];
+  } catch (err) {
+    console.error("Failed to fetch active campaigns:", err);
+    return [];
+  }
+};
+
+export const getCampaignHistory = async (token: string) => {
+  try {
+    const res = await API.get("/admin/campaigns/history", getAuthHeaders(token));
+    return res.data || [];
+  } catch (err) {
+    console.error("Failed to fetch campaign history:", err);
+    return [];
+  }
+};
+
+export const deleteCampaign = async (campaignId: string, token: string) => {
+  try {
+    const res = await API.delete(`/admin/campaigns/${campaignId}`, getAuthHeaders(token));
+    return res.data;
+  } catch (err: any) {
+    console.error("Failed to delete campaign:", err);
     throw err.response?.data || err;
   }
 };

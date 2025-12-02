@@ -95,15 +95,73 @@ export const getAdminStats = async (_req: Request, res: Response) => {
       _sum: { amount: true },
     });
 
+    // Get total unique donors
+    const uniqueDonors = await prisma.donation.findMany({
+      where: { status: "COMPLETED" },
+      select: { userId: true },
+      distinct: ["userId"],
+    });
+
     return res.json({
       totalUsers,
       totalCampaigns,
       totalDonations,
+      totalDonors: uniqueDonors.length,
       totalFunds: totalFunds._sum.currentFunds || 0,
       totalDonationAmount: totalDonationAmount._sum.amount || 0,
     });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Failed to fetch admin stats" });
+  }
+};
+
+export const getActiveCampaigns = async (_req: Request, res: Response) => {
+  try {
+    const campaigns = await prisma.campaign.findMany({
+      where: { isEnded: false },
+      include: { user: { select: { id: true, email: true, fullName: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+    return res.json(campaigns);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to fetch active campaigns" });
+  }
+};
+
+export const getCampaignHistory = async (_req: Request, res: Response) => {
+  try {
+    const campaigns = await prisma.campaign.findMany({
+      where: { isEnded: true },
+      include: { user: { select: { id: true, email: true, fullName: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+    return res.json(campaigns);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to fetch campaign history" });
+  }
+};
+
+export const deleteCampaign = async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const campaign = await prisma.campaign.findUnique({ where: { id } });
+    if (!campaign) return res.status(404).json({ error: "Campaign not found" });
+
+    // Prevent deleting ended campaigns (history)
+    if (campaign.isEnded) {
+      return res.status(400).json({ error: "Cannot delete ended campaigns. They are part of history." });
+    }
+
+    // Delete the campaign (this will cascade delete donations due to foreign key)
+    await prisma.campaign.delete({ where: { id } });
+
+    return res.json({ message: "Campaign deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to delete campaign" });
   }
 };

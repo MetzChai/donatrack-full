@@ -20,11 +20,20 @@ app.use(express.json());
 
 app.use(passport.initialize());
 
-app.use("/auth", authRoutes);
+// Test route to verify server is running
+app.get("/api/test", (_req, res) => {
+  res.json({ message: "API routes are working", timestamp: new Date().toISOString() });
+});
+
+// API routes with version prefix
+app.use("/api/auth/v1", authRoutes);
 app.use("/campaigns", campaignsRoutes);
 app.use("/donations", donationsRoutes);
 app.use("/admin", adminRoutes);
 app.use("/funds", fundsRoutes);
+
+// Legacy auth routes (for backward compatibility)
+app.use("/auth", authRoutes);
 
 app.get("/", (_req, res) => res.json({ message: "Donatrack backend running" }));
 

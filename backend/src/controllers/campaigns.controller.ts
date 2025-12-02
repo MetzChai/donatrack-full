@@ -71,6 +71,11 @@ export const endCampaign = async (req: any, res: Response) => {
       return res.status(403).json({ error: "Forbidden: Only campaign creator or admin can end campaign" });
     }
 
+    // Admin can only end campaigns when goal is met
+    if (req.user.role === "ADMIN" && campaign.userId !== req.user.id && campaign.collected < campaign.goalAmount) {
+      return res.status(400).json({ error: "Cannot end campaign: Goal amount not yet met" });
+    }
+
     const updatedCampaign = await prisma.campaign.update({
       where: { id },
       data: { isEnded: true },

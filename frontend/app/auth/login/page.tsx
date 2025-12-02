@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { loginUser } from "../../../lib/api";
-import { setToken, setUser } from "../../../utils/auth";
+import { useAuth } from "../../../contexts/AuthContext";
+import GuestPage from "../../../components/GuestPage";
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { login, refreshUser } = useAuth();
 
   useEffect(() => {
     const googleToken = searchParams.get("token");
@@ -22,14 +24,27 @@ export default function LoginPage() {
     if (googleToken && googleUser) {
       try {
         const decodedUser = JSON.parse(atob(googleUser));
-        setToken(googleToken);
-        setUser(decodedUser);
-        router.replace("/");
+        
+        // Save to localStorage first
+        if (typeof window !== "undefined") {
+          localStorage.setItem("token", googleToken);
+          localStorage.setItem("user", JSON.stringify(decodedUser));
+        }
+        
+        // Update context
+        login(googleToken, decodedUser);
+        
+        // Wait for state to update, then redirect using Next.js router
+        setTimeout(() => {
+          const redirectPath = decodedUser.role === "ADMIN" ? "/admin" : "/";
+          router.replace(redirectPath);
+        }, 150);
       } catch (err) {
         console.error("Failed to parse Google user payload", err);
+        setError("Failed to authenticate with Google");
       }
     }
-  }, [router, searchParams]);
+  }, [router, searchParams, login]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,12 +53,38 @@ export default function LoginPage() {
 
     try {
       const { token, user } = await loginUser({ email, password });
-      setToken(token);
-      setUser(user);
-      router.push("/");
+      
+      // Verify token and user are received
+      if (!token || !user) {
+        throw new Error("Invalid response from server");
+      }
+      
+      // Set token and user in localStorage first - do this synchronously
+      if (typeof window !== "undefined") {
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+      
+      // Update context state
+      login(token, user);
+      
+      // Verify token was saved
+      const savedToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      if (!savedToken) {
+        console.error("Token was not saved to localStorage");
+        throw new Error("Failed to save authentication token");
+      }
+      
+      // Wait a bit for state to propagate
+      await new Promise(resolve => setTimeout(resolve, 150));
+      
+      // Redirect based on user role using Next.js router
+      const redirectPath = user.role === "ADMIN" ? "/admin" : "/";
+      router.replace(redirectPath);
+      
+      // Don't call refreshUser immediately - let it happen naturally on the next page
     } catch (err: any) {
       setError(err.error || "Login failed. Please check your credentials.");
-    } finally {
       setLoading(false);
     }
   };
@@ -128,7 +169,7 @@ export default function LoginPage() {
             type="button"
             onClick={() => {
               const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-              window.location.href = `${baseUrl}/auth/google`;
+              window.location.href = `${baseUrl}/api/auth/v1/google`;
             }}
             className="w-full border border-gray-300 rounded-lg py-3 flex items-center justify-center gap-2 hover:bg-gray-50"
           >
@@ -145,5 +186,13 @@ export default function LoginPage() {
         </form>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <GuestPage>
+      <LoginPageContent />
+    </GuestPage>
   );
 }
