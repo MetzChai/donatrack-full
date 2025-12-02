@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+
+  // Platform-handled funds (Option 2)
+  currentFunds    Float @default(0)
+  withdrawableFunds Float @default(0)
+
+  // Xendit API keys (Option 1) - for campaign creators
+  xenditApiKey    String?
+  xenditSecretKey String?
+  xenditClientKey String?
+
+  campaigns Campaign[]
+  donations Donation[]
+}
+
+enum Role {
+  USER
+  CREATOR
+  ADMIN
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  goalAmount  Float
+  collected   Float    @default(0)
+  imageUrl    String?
+  isEnded     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String
+  donations Donation[]
+}
+
+model Donation {
+  id        String   @id @default(cuid())
+  amount    Float
+  method    String   // Payment method (GCash, Credit Card, etc.)
+  paymentProvider String @default("XENDIT") // Xendit as payment provider
+  xenditPaymentId String? // Xendit payment reference
+  message   String? // Optional support message
+  isAnonymous Boolean @default(false)
+  status    String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  campaignId String
+}

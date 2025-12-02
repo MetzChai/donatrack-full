@@ -1,0 +1,8 @@
+{
+  "/page": "app/page.js",
+  "/campaigns/[id]/page": "app/campaigns/[id]/page.js",
+  "/donate-history/page": "app/donate-history/page.js",
+  "/about/page": "app/about/page.js",
+  "/campaigns/page": "app/campaigns/page.js",
+  "/user/page": "app/user/page.js"
+}
