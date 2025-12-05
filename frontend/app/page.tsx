@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getCampaigns } from "../lib/api";
 import CampaignCard from "../components/CampaignCard";
 import Link from "next/link";
@@ -9,14 +9,16 @@ import { getToken } from "../utils/auth";
 export default function HomePage() {
   const [featuredCampaigns, setFeaturedCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const token = getToken();
 
   useEffect(() => {
     async function fetchCampaigns() {
       try {
         const campaigns = await getCampaigns();
-        // Get top 3 campaigns (or first 3)
-        setFeaturedCampaigns(campaigns.slice(0, 3));
+        // Show all campaigns (not just first 3)
+        setFeaturedCampaigns(campaigns);
       } catch (err) {
         console.error("Failed to fetch campaigns:", err);
       } finally {
@@ -25,6 +27,24 @@ export default function HomePage() {
     }
     fetchCampaigns();
   }, []);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      const cardWidth = scrollContainerRef.current.querySelector('.campaign-card')?.clientWidth || 320;
+      const gap = 32; // gap-8 = 2rem = 32px
+      const scrollAmount = cardWidth + gap;
+      scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      const cardWidth = scrollContainerRef.current.querySelector('.campaign-card')?.clientWidth || 320;
+      const gap = 32; // gap-8 = 2rem = 32px
+      const scrollAmount = cardWidth + gap;
+      scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -62,15 +82,71 @@ export default function HomePage() {
         ) : featuredCampaigns.length === 0 ? (
           <p className="text-gray-500 text-center">No featured campaigns available.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCampaigns.map((campaign: any) => (
-              <div
-                key={campaign.id}
-                className="transform hover:scale-105 transition-transform duration-300"
+          <div className="relative">
+            {/* Left Arrow */}
+            {featuredCampaigns.length > 3 && (
+              <button
+                onClick={scrollLeft}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all duration-200 hover:scale-110"
+                aria-label="Scroll left"
               >
-                <CampaignCard campaign={campaign} />
-              </div>
-            ))}
+                <svg
+                  className="w-6 h-6 text-gray-800"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Scrollable Campaigns Container */}
+            <div
+              ref={scrollContainerRef}
+              className="flex gap-8 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+              style={{
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+              }}
+            >
+              {featuredCampaigns.map((campaign: any) => (
+                <div
+                  key={campaign.id}
+                  className="campaign-card flex-shrink-0 w-full sm:w-80 lg:w-96 transform hover:scale-105 transition-transform duration-300"
+                >
+                  <CampaignCard campaign={campaign} />
+                </div>
+              ))}
+            </div>
+
+            {/* Right Arrow */}
+            {featuredCampaigns.length > 3 && (
+              <button
+                onClick={scrollRight}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white shadow-lg rounded-full p-3 transition-all duration-200 hover:scale-110"
+                aria-label="Scroll right"
+              >
+                <svg
+                  className="w-6 h-6 text-gray-800"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            )}
           </div>
         )}
       </section>

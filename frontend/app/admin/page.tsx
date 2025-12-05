@@ -12,7 +12,6 @@ import {
   createCampaign,
   updateCampaign,
   endCampaign,
-  getAllDonationsAdmin,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedPage from "@/components/ProtectedPage";
@@ -22,7 +21,6 @@ function AdminPageContent() {
   const [stats, setStats] = useState<any>(null);
   const [activeCampaigns, setActiveCampaigns] = useState<any[]>([]);
   const [campaignHistory, setCampaignHistory] = useState<any[]>([]);
-  const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [newRole, setNewRole] = useState<string>("");
@@ -49,18 +47,16 @@ function AdminPageContent() {
     if (!token) return;
 
     try {
-      const [usersData, statsData, activeData, historyData, donationsData] = await Promise.all([
+      const [usersData, statsData, activeData, historyData] = await Promise.all([
         getUsers(token),
         getAdminStats(token),
         getActiveCampaigns(token),
         getCampaignHistory(token),
-        getAllDonationsAdmin(token),
       ]);
       setUsers(usersData);
       setStats(statsData);
       setActiveCampaigns(activeData);
       setCampaignHistory(historyData);
-      setDonations(donationsData);
     } catch (err) {
       console.error("Failed to fetch admin data", err);
       alert("Failed to load admin data");
@@ -244,68 +240,6 @@ function AdminPageContent() {
           </div>
         </section>
       )}
-
-      {/* All Donations Section */}
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">All Donations</h2>
-        {donations.length === 0 ? (
-          <p className="text-gray-400">No donations recorded yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white/5 backdrop-blur-sm border border-white/6 rounded-2xl overflow-hidden shadow-xl">
-              <thead className="bg-white/8 text-gray-300 text-sm uppercase tracking-wide">
-                <tr>
-                  <th className="p-4 text-left">Date</th>
-                  <th className="p-4 text-left">Donor</th>
-                  <th className="p-4 text-left">Campaign</th>
-                  <th className="p-4 text-left">Amount</th>
-                  <th className="p-4 text-left">Method</th>
-                  <th className="p-4 text-left">Message</th>
-                  <th className="p-4 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {donations.map((d) => (
-                  <tr
-                    key={d.id}
-                    className="border-b border-white/6 hover:bg-white/8 transition"
-                  >
-                    <td className="p-4 text-sm text-gray-300">
-                      {new Date(d.createdAt).toLocaleString()}
-                    </td>
-                    <td className="p-4">
-                      {d.user?.fullName || d.user?.email || "Unknown Donor"}
-                    </td>
-                    <td className="p-4">
-                      {d.campaign?.title || "Unknown Campaign"}
-                    </td>
-                    <td className="p-4 font-semibold">
-                      ₱{d.amount?.toFixed(2)}
-                    </td>
-                    <td className="p-4">{d.method}</td>
-                    <td className="p-4 text-sm text-gray-300">
-                      {d.message || <span className="text-gray-500">-</span>}
-                    </td>
-                    <td className="p-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          d.status === "COMPLETED"
-                            ? "bg-emerald-500/20 text-emerald-300"
-                            : d.status === "PENDING"
-                            ? "bg-yellow-500/20 text-yellow-300"
-                            : "bg-rose-500/20 text-rose-300"
-                        }`}
-                      >
-                        {d.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
 
       {/* Active Campaigns Section */}
       <section className="mb-8">
