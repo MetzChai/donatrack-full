@@ -20,7 +20,11 @@ export default function Header() {
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-2">
-            <span className="text-2xl">⚫⚫⚫</span>
+            <span className="text-2xl">
+              <span className="text-red-500">●</span>
+              <span className="text-orange-400">●</span>
+              <span className="text-green-500">●</span>
+            </span>
             {user && <span className="font-semibold">My Dashboard</span>}
           </div>
           <div className="font-bold text-xl">DONATRACK</div>
@@ -30,7 +34,7 @@ export default function Header() {
         {user && (
           <>
             <div className="flex justify-between items-center border-t border-purple-800 pt-2">
-              <nav className="flex space-x-6">
+              <nav className="flex space-x-6 text-xl font-medium">
                 <Link
                   href="/"
                   className={`pb-1 ${

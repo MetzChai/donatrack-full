@@ -50,6 +50,9 @@ export default function CampaignDetail({ params }: { params: { id: string } }) {
 
   const progressPercentage = Math.min((campaign.collected / campaign.goalAmount) * 100, 100);
   const isEnded = campaign.isEnded;
+  const isAdmin = user?.role === "ADMIN";
+  const isCreator = user && campaign && campaign.userId && user.id === campaign.userId;
+  const canDonate = !!token && !isEnded && !isAdmin && !isCreator;
 
   return (
     <main className="p-8 min-h-screen bg-gray-900 text-white">
@@ -107,11 +110,17 @@ export default function CampaignDetail({ params }: { params: { id: string } }) {
         {/* Donate Button */}
         {!isEnded && (
           <button
-            onClick={() => setShowDonateModal(true)}
-            disabled={!token}
+            onClick={() => {
+              if (canDonate) setShowDonateModal(true);
+            }}
+            disabled={!canDonate}
             className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-8 py-3 rounded-lg text-lg font-semibold mb-8"
           >
-            {token ? "Donate Now" : "Login to Donate"}
+            {!token
+              ? "Login to Donate"
+              : isAdmin || isCreator
+              ? "Creators/Admins cannot donate"
+              : "Donate Now"}
           </button>
         )}
       </div>

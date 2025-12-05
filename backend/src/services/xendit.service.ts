@@ -2,10 +2,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Try to import Xendit, but make it optional
+// Try to import Xendit SDK, but make it optional for local/dev without payments
 let Xendit: any;
 try {
-  Xendit = require("xendit").default || require("xendit");
+  Xendit = require("xendit-node").default || require("xendit-node");
 } catch (e) {
   console.warn("Xendit package not installed. Payment processing will be mocked.");
   Xendit = null;

@@ -12,6 +12,7 @@ import {
   createCampaign,
   updateCampaign,
   endCampaign,
+  getAllDonationsAdmin,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedPage from "@/components/ProtectedPage";
@@ -21,6 +22,7 @@ function AdminPageContent() {
   const [stats, setStats] = useState<any>(null);
   const [activeCampaigns, setActiveCampaigns] = useState<any[]>([]);
   const [campaignHistory, setCampaignHistory] = useState<any[]>([]);
+  const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [newRole, setNewRole] = useState<string>("");
@@ -47,16 +49,18 @@ function AdminPageContent() {
     if (!token) return;
 
     try {
-      const [usersData, statsData, activeData, historyData] = await Promise.all([
+      const [usersData, statsData, activeData, historyData, donationsData] = await Promise.all([
         getUsers(token),
         getAdminStats(token),
         getActiveCampaigns(token),
         getCampaignHistory(token),
+        getAllDonationsAdmin(token),
       ]);
       setUsers(usersData);
       setStats(statsData);
       setActiveCampaigns(activeData);
       setCampaignHistory(historyData);
+      setDonations(donationsData);
     } catch (err) {
       console.error("Failed to fetch admin data", err);
       alert("Failed to load admin data");
@@ -205,55 +209,123 @@ function AdminPageContent() {
 
   if (loading) {
     return (
-      <main className="p-8 min-h-screen flex items-center justify-center bg-gray-900 text-white">
+      <main className="p-8 min-h-screen flex items-center justify-center bg-gradient-to-b from-[#05060a] to-[#071020] text-white">
         <p className="text-xl">Loading...</p>
       </main>
     );
   }
 
   return (
-    <main className="p-8 min-h-screen bg-gray-900 text-white">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+    <main className="p-8 min-h-screen bg-gradient-to-b from-[#071020] to-[#04050a] text-white">
+      <h1 className="text-4xl font-extrabold mb-8 tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-300">
+        Admin Dashboard
+      </h1>
 
       {/* Stats Section */}
       {stats && (
-        <section className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-gray-400 text-sm">Total Donations</h3>
-            <p className="text-2xl font-bold">{stats.totalDonations}</p>
+        <section className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white/6 backdrop-blur-md border border-white/6 p-5 rounded-2xl shadow-xl">
+            <h3 className="text-gray-300 text-xs uppercase tracking-wide">Total Donations</h3>
+            <p className="text-3xl font-bold mt-2 text-emerald-300">{stats.totalDonations}</p>
           </div>
-          <div className="bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-gray-400 text-sm">Total Donors</h3>
-            <p className="text-2xl font-bold">{stats.totalDonors || 0}</p>
+          <div className="bg-white/6 backdrop-blur-md border border-white/6 p-5 rounded-2xl shadow-xl">
+            <h3 className="text-gray-300 text-xs uppercase tracking-wide">Total Donors</h3>
+            <p className="text-3xl font-bold mt-2 text-emerald-300">{stats.totalDonors || 0}</p>
           </div>
-          <div className="bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-gray-400 text-sm">Active Campaigns</h3>
-            <p className="text-2xl font-bold">{activeCampaigns.length}</p>
+          <div className="bg-white/6 backdrop-blur-md border border-white/6 p-5 rounded-2xl shadow-xl">
+            <h3 className="text-gray-300 text-xs uppercase tracking-wide">Active Campaigns</h3>
+            <p className="text-3xl font-bold mt-2 text-emerald-300">{activeCampaigns.length}</p>
           </div>
-          <div className="bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-gray-400 text-sm">Total Donated</h3>
-            <p className="text-2xl font-bold">₱{stats.totalDonationAmount?.toFixed(2) || "0.00"}</p>
+          <div className="bg-white/6 backdrop-blur-md border border-white/6 p-5 rounded-2xl shadow-xl">
+            <h3 className="text-gray-300 text-xs uppercase tracking-wide">Total Donated</h3>
+            <p className="text-3xl font-bold mt-2 text-emerald-300">
+              ₱{stats.totalDonationAmount?.toFixed(2) || "0.00"}
+            </p>
           </div>
         </section>
       )}
 
+      {/* All Donations Section */}
+      <section className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4">All Donations</h2>
+        {donations.length === 0 ? (
+          <p className="text-gray-400">No donations recorded yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white/5 backdrop-blur-sm border border-white/6 rounded-2xl overflow-hidden shadow-xl">
+              <thead className="bg-white/8 text-gray-300 text-sm uppercase tracking-wide">
+                <tr>
+                  <th className="p-4 text-left">Date</th>
+                  <th className="p-4 text-left">Donor</th>
+                  <th className="p-4 text-left">Campaign</th>
+                  <th className="p-4 text-left">Amount</th>
+                  <th className="p-4 text-left">Method</th>
+                  <th className="p-4 text-left">Message</th>
+                  <th className="p-4 text-left">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {donations.map((d) => (
+                  <tr
+                    key={d.id}
+                    className="border-b border-white/6 hover:bg-white/8 transition"
+                  >
+                    <td className="p-4 text-sm text-gray-300">
+                      {new Date(d.createdAt).toLocaleString()}
+                    </td>
+                    <td className="p-4">
+                      {d.user?.fullName || d.user?.email || "Unknown Donor"}
+                    </td>
+                    <td className="p-4">
+                      {d.campaign?.title || "Unknown Campaign"}
+                    </td>
+                    <td className="p-4 font-semibold">
+                      ₱{d.amount?.toFixed(2)}
+                    </td>
+                    <td className="p-4">{d.method}</td>
+                    <td className="p-4 text-sm text-gray-300">
+                      {d.message || <span className="text-gray-500">-</span>}
+                    </td>
+                    <td className="p-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          d.status === "COMPLETED"
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : d.status === "PENDING"
+                            ? "bg-yellow-500/20 text-yellow-300"
+                            : "bg-rose-500/20 text-rose-300"
+                        }`}
+                      >
+                        {d.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       {/* Active Campaigns Section */}
       <section className="mb-8">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
           <h2 className="text-2xl font-semibold">Active Campaigns</h2>
-          <button
-            onClick={() => handleOpenCampaignModal()}
-            className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm font-semibold"
-          >
-            + Add Campaign
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleOpenCampaignModal()}
+              className="bg-gradient-to-r from-emerald-500 to-green-400 hover:opacity-90 transition px-4 py-2 rounded-lg text-sm font-semibold shadow"
+            >
+              + Add Campaign
+            </button>
+          </div>
         </div>
         {activeCampaigns.length === 0 ? (
           <p className="text-gray-400">No active campaigns found.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-gray-800 rounded-lg overflow-hidden">
-              <thead className="bg-gray-900">
+            <table className="min-w-full bg-white/5 backdrop-blur-sm border border-white/6 rounded-2xl overflow-hidden shadow-xl">
+              <thead className="bg-white/8 text-gray-300 text-sm uppercase tracking-wide">
                 <tr>
                   <th className="p-4 text-left">Title</th>
                   <th className="p-4 text-left">Creator</th>
@@ -269,15 +341,17 @@ function AdminPageContent() {
                   const progress = Math.min((campaign.collected / campaign.goalAmount) * 100, 100);
                   const goalMet = campaign.collected >= campaign.goalAmount;
                   return (
-                    <tr key={campaign.id} className="border-b border-gray-700 hover:bg-gray-750">
+                    <tr key={campaign.id} className="border-b border-white/6 hover:bg-white/8 transition">
                       <td className="p-4 font-semibold">{campaign.title}</td>
                       <td className="p-4">{campaign.user?.fullName || "Unknown"}</td>
                       <td className="p-4">₱{campaign.goalAmount.toFixed(2)}</td>
                       <td className="p-4">₱{campaign.collected.toFixed(2)}</td>
-                      <td className="p-4">
-                        <div className="w-full bg-gray-700 rounded-full h-2">
+                      <td className="p-4 w-48">
+                        <div className="w-full bg-white/8 h-2 rounded-full overflow-hidden">
                           <div
-                            className={`h-2 rounded-full ${goalMet ? "bg-green-600" : "bg-blue-600"}`}
+                            className={`h-2 transition-all duration-700 ${
+                              goalMet ? "bg-emerald-400" : "bg-cyan-400"
+                            }`}
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -288,21 +362,21 @@ function AdminPageContent() {
                         <div className="flex gap-2 flex-wrap">
                           <button
                             onClick={() => handleOpenCampaignModal(campaign)}
-                            className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs"
+                            className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 transition px-3 py-1 rounded text-xs font-semibold shadow"
                           >
                             Edit
                           </button>
                           {goalMet && (
                             <button
                               onClick={() => handleEndCampaign(campaign.id)}
-                              className="bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-xs"
+                              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90 transition px-3 py-1 rounded text-xs font-semibold shadow"
                             >
                               End Campaign
                             </button>
                           )}
                           <button
                             onClick={() => handleDeleteCampaign(campaign.id)}
-                            className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs"
+                            className="bg-gradient-to-r from-rose-500 to-red-500 hover:opacity-90 transition px-3 py-1 rounded text-xs font-semibold shadow"
                           >
                             Delete
                           </button>
@@ -324,8 +398,8 @@ function AdminPageContent() {
           <p className="text-gray-400">No campaign history found.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-gray-800 rounded-lg overflow-hidden">
-              <thead className="bg-gray-900">
+            <table className="min-w-full bg-white/5 backdrop-blur-sm border border-white/6 rounded-2xl overflow-hidden shadow-xl">
+              <thead className="bg-white/8 text-gray-300 text-sm uppercase tracking-wide">
                 <tr>
                   <th className="p-4 text-left">Title</th>
                   <th className="p-4 text-left">Creator</th>
@@ -339,15 +413,15 @@ function AdminPageContent() {
                 {campaignHistory.map((campaign) => {
                   const progress = Math.min((campaign.collected / campaign.goalAmount) * 100, 100);
                   return (
-                    <tr key={campaign.id} className="border-b border-gray-700 hover:bg-gray-750">
+                    <tr key={campaign.id} className="border-b border-white/6 hover:bg-white/8 transition">
                       <td className="p-4 font-semibold">{campaign.title}</td>
                       <td className="p-4">{campaign.user?.fullName || "Unknown"}</td>
                       <td className="p-4">₱{campaign.goalAmount.toFixed(2)}</td>
                       <td className="p-4">₱{campaign.collected.toFixed(2)}</td>
                       <td className="p-4">
-                        <div className="w-full bg-gray-700 rounded-full h-2">
+                        <div className="w-full bg-white/8 h-2 rounded-full overflow-hidden">
                           <div
-                            className={`h-2 rounded-full ${progress >= 100 ? "bg-green-600" : "bg-gray-500"}`}
+                            className={`h-2 transition-all duration-700 ${progress >= 100 ? "bg-emerald-400" : "bg-gray-500"}`}
                             style={{ width: `${progress}%` }}
                           />
                         </div>
@@ -370,9 +444,9 @@ function AdminPageContent() {
           <p>No users found.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-gray-800 rounded-lg overflow-hidden">
-              <thead className="bg-gray-900">
-                <tr>
+            <table className="min-w-full bg-white/5 backdrop-blur-sm border border-white/6 rounded-2xl overflow-hidden shadow-xl">
+              <thead className="bg-white/8">
+                <tr className="text-gray-300 text-sm uppercase tracking-wide">
                   <th className="p-4 text-left">Name</th>
                   <th className="p-4 text-left">Email</th>
                   <th className="p-4 text-left">Role</th>
@@ -385,17 +459,17 @@ function AdminPageContent() {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-750">
+                  <tr key={user.id} className="border-b border-white/6 hover:bg-white/8 transition">
                     <td className="p-4">{user.fullName}</td>
                     <td className="p-4">{user.email}</td>
                     <td className="p-4">
                       <span
-                        className={`px-2 py-1 rounded text-xs ${
+                        className={`px-2 py-1 rounded text-xs font-semibold ${
                           user.role === "ADMIN"
-                            ? "bg-purple-600"
+                            ? "bg-gradient-to-r from-purple-500 to-pink-500"
                             : user.role === "CREATOR"
-                            ? "bg-blue-600"
-                            : "bg-gray-600"
+                            ? "bg-gradient-to-r from-blue-500 to-indigo-500"
+                            : "bg-gradient-to-r from-gray-600 to-gray-500"
                         }`}
                       >
                         {user.role}
@@ -412,14 +486,14 @@ function AdminPageContent() {
                             setSelectedUser(user.id);
                             setNewRole(user.role);
                           }}
-                          className="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm"
+                          className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 transition px-3 py-1 rounded text-sm font-semibold shadow"
                         >
                           Change Role
                         </button>
                         {user.id !== currentUser?.id && (
                           <button
                             onClick={() => handleDeleteUser(user.id)}
-                            className="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm"
+                            className="bg-gradient-to-r from-rose-500 to-red-500 hover:opacity-90 transition px-3 py-1 rounded text-sm font-semibold shadow"
                           >
                             Delete
                           </button>
@@ -436,8 +510,8 @@ function AdminPageContent() {
 
       {/* Campaign Modal */}
       {showCampaignModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-2xl w-full mx-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#0b1220] border border-white/8 p-6 rounded-2xl max-w-2xl w-full mx-4 shadow-2xl">
             <h3 className="text-xl font-bold mb-4">
               {editingCampaign ? "Edit Campaign" : "Create New Campaign"}
             </h3>
@@ -448,7 +522,7 @@ function AdminPageContent() {
                   type="text"
                   value={campaignForm.title}
                   onChange={(e) => setCampaignForm({ ...campaignForm, title: e.target.value })}
-                  className="w-full bg-gray-700 text-white p-2 rounded"
+                  className="w-full bg-white/20 border border-white/6 text-white p-3 rounded-lg focus:outline-none focus:border-emerald-400 transition"
                   placeholder="Campaign title"
                 />
               </div>
@@ -457,7 +531,7 @@ function AdminPageContent() {
                 <textarea
                   value={campaignForm.description}
                   onChange={(e) => setCampaignForm({ ...campaignForm, description: e.target.value })}
-                  className="w-full bg-gray-700 text-white p-2 rounded"
+                  className="w-full bg-white/20 border border-white/6 text-white p-3 rounded-lg focus:outline-none focus:border-emerald-400 transition"
                   rows={4}
                   placeholder="Campaign description"
                 />
@@ -468,7 +542,7 @@ function AdminPageContent() {
                   type="number"
                   value={campaignForm.goalAmount}
                   onChange={(e) => setCampaignForm({ ...campaignForm, goalAmount: e.target.value })}
-                  className="w-full bg-gray-700 text-white p-2 rounded"
+                  className="w-full bg-white/20 border border-white/6 text-white p-3 rounded-lg focus:outline-none focus:border-emerald-400 transition"
                   placeholder="0.00"
                   min="0"
                   step="0.01"
@@ -480,7 +554,7 @@ function AdminPageContent() {
                   type="url"
                   value={campaignForm.imageUrl}
                   onChange={(e) => setCampaignForm({ ...campaignForm, imageUrl: e.target.value })}
-                  className="w-full bg-gray-700 text-white p-2 rounded"
+                  className="w-full bg-white/20 border border-white/6 text-white p-3 rounded-lg focus:outline-none focus:border-emerald-400 transition"
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
@@ -488,13 +562,13 @@ function AdminPageContent() {
             <div className="flex gap-2 mt-6">
               <button
                 onClick={handleSaveCampaign}
-                className="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded font-semibold"
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-green-400 hover:opacity-90 py-2 rounded-lg font-semibold shadow"
               >
                 {editingCampaign ? "Update" : "Create"}
               </button>
               <button
                 onClick={handleCloseCampaignModal}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 py-2 rounded"
+                className="flex-1 bg-white/6 hover:opacity-90 py-2 rounded-lg shadow"
               >
                 Cancel
               </button>
@@ -505,13 +579,13 @@ function AdminPageContent() {
 
       {/* Role Update Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg max-w-md w-full">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#0b1220] border border-white/8 p-6 rounded-2xl max-w-md w-full shadow-2xl">
             <h3 className="text-xl font-bold mb-4">Update User Role</h3>
             <select
               value={newRole}
               onChange={(e) => setNewRole(e.target.value)}
-              className="w-full bg-gray-700 text-white p-2 rounded mb-4"
+              className="w-full bg-white/6 border border-white/6 text-white p-3 rounded-lg mb-4 focus:outline-none focus:border-emerald-400 transition"
             >
               <option value="USER">USER</option>
               <option value="CREATOR">CREATOR</option>
@@ -520,7 +594,7 @@ function AdminPageContent() {
             <div className="flex gap-2">
               <button
                 onClick={() => handleUpdateRole(selectedUser)}
-                className="flex-1 bg-green-600 hover:bg-green-700 py-2 rounded"
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-green-400 hover:opacity-90 py-2 rounded-lg font-semibold shadow"
               >
                 Update
               </button>
@@ -529,7 +603,7 @@ function AdminPageContent() {
                   setSelectedUser(null);
                   setNewRole("");
                 }}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 py-2 rounded"
+                className="flex-1 bg-white/6 hover:opacity-90 py-2 rounded-lg shadow"
               >
                 Cancel
               </button>

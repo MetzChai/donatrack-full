@@ -165,3 +165,32 @@ export const deleteCampaign = async (req: any, res: Response) => {
     return res.status(500).json({ error: "Failed to delete campaign" });
   }
 };
+
+// Admin - get all donations from all users
+export const getAllDonations = async (_req: Request, res: Response) => {
+  try {
+    const donations = await prisma.donation.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+          },
+        },
+        campaign: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json(donations);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Failed to fetch all donations" });
+  }
+};

@@ -27,42 +27,49 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gray-100">
+    <main className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="relative h-96 bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black opacity-30"></div>
-        <div className="relative z-10 text-center text-white px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            See Your Impact. Know Your Money's Journey.
-          </h1>
-          <Link
-            href="/campaigns"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg mt-4"
-          >
-            Make Change
-          </Link>
-        </div>
-        {/* Hero Image Background */}
+      <section className="relative h-96 md:h-[28rem] lg:h-[32rem] flex items-center justify-center overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-50"
+          className="absolute inset-0 bg-cover bg-center blur-sm"
           style={{
             backgroundImage:
               "url('https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=1200')",
           }}
         ></div>
+        <div className="absolute inset-0 bg-black/50"></div>
+        <div className="relative z-10 text-center px-4 max-w-3xl">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg mb-4">
+            See Your Impact. Know Your Money's Journey.
+          </h1>
+          <p className="text-white/90 mb-6 text-lg md:text-xl">
+            Empower meaningful change by supporting verified campaigns around the world.
+          </p>
+          <Link
+            href="/campaigns"
+            className="inline-block bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white px-8 py-3 rounded-lg font-semibold text-lg shadow-lg transition-all"
+          >
+            Make Change
+          </Link>
+        </div>
       </section>
 
       {/* Featured Campaigns Section */}
-      <section className="container mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold mb-8 text-gray-800">Featured Campaigns</h2>
+      <section className="container mx-auto px-4 py-16">
+        <h2 className="text-3xl font-bold mb-8 text-gray-800 text-center">Featured Campaigns</h2>
         {loading ? (
-          <p className="text-gray-600">Loading campaigns...</p>
+          <p className="text-gray-500 text-center">Loading campaigns...</p>
         ) : featuredCampaigns.length === 0 ? (
-          <p className="text-gray-600">No featured campaigns available.</p>
+          <p className="text-gray-500 text-center">No featured campaigns available.</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredCampaigns.map((campaign: any) => (
-              <CampaignCard key={campaign.id} campaign={campaign} />
+              <div
+                key={campaign.id}
+                className="transform hover:scale-105 transition-transform duration-300"
+              >
+                <CampaignCard campaign={campaign} />
+              </div>
             ))}
           </div>
         )}

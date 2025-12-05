@@ -4,58 +4,63 @@ import Link from "next/link";
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-gray-100">
+    <main className="min-h-screen bg-[#0A0F1E] text-white">
       {/* About Us Section */}
-      <section className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4 text-gray-800">
+      <section className="container mx-auto px-4 py-16">
+
+        <div className="text-center mb-14">
+          <h1 className="text-4xl font-extrabold mb-4 tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-300">
             About Us. See Where Every Dollar Goes.
           </h1>
-          <p className="text-xl text-gray-600">Getting Change with Radical Transparency</p>
+          <p className="text-lg text-gray-300">
+            Getting Change with Radical Transparency
+          </p>
         </div>
 
-        <div className="mb-12">
+        <div className="mb-14">
           <img
             src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200"
             alt="Team collaboration"
-            className="w-full h-96 object-cover rounded-lg shadow-lg"
+            className="w-full h-96 object-cover rounded-2xl shadow-2xl border border-white/10"
           />
         </div>
 
         {/* Mission Section */}
-        <section className="bg-white rounded-lg shadow-lg p-8 mb-12">
-          <h2 className="text-3xl font-bold mb-2 text-gray-800">BRIDGING GENEROSITY AND IMPACT</h2>
-          <p className="text-xl text-gray-600 mb-6">Our Mission</p>
+        <section className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl p-10 mb-14">
+          <h2 className="text-3xl font-extrabold mb-2 text-emerald-300">
+            BRIDGING GENEROSITY AND IMPACT
+          </h2>
+          <p className="text-lg text-gray-300 mb-8">Our Mission</p>
 
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-4 text-gray-800">What Makes Us Different?</h3>
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4 text-cyan-200">What Makes Us Different?</h3>
             <ul className="space-y-3">
               <li className="flex items-center gap-3">
-                <span className="text-green-600 text-xl">✓</span>
-                <span className="text-gray-700">Action to World Transparency</span>
+                <span className="text-emerald-400 text-xl">✓</span>
+                <span className="text-gray-200">Action to World Transparency</span>
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-green-600 text-xl">✓</span>
-                <span className="text-gray-700">Verified Recipient Confirmation</span>
+                <span className="text-emerald-400 text-xl">✓</span>
+                <span className="text-gray-200">Verified Recipient Confirmation</span>
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-green-600 text-xl">✓</span>
-                <span className="text-gray-700">Real-Time Impact Feedback</span>
+                <span className="text-emerald-400 text-xl">✓</span>
+                <span className="text-gray-200">Real-Time Impact Feedback</span>
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-green-600 text-xl">✓</span>
-                <span className="text-gray-700">Fund-raising, No Tangible Goods</span>
+                <span className="text-emerald-400 text-xl">✓</span>
+                <span className="text-gray-200">Fund-raising, No Tangible Goods</span>
               </li>
               <li className="flex items-center gap-3">
-                <span className="text-green-600 text-xl">✓</span>
-                <span className="text-gray-700">Clear-cut Head Breakdown</span>
+                <span className="text-emerald-400 text-xl">✓</span>
+                <span className="text-gray-200">Clear-cut Head Breakdown</span>
               </li>
             </ul>
           </div>
 
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-3 text-gray-800">Why Us?</h3>
-            <p className="text-gray-700 leading-relaxed">
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-3 text-cyan-200">Why Us?</h3>
+            <p className="text-gray-300 leading-relaxed">
               At DONATRACK, we believe in complete transparency. Every donation you make is tracked,
               verified, and reported back to you. We ensure that your contributions reach the intended
               recipients and make a real impact. Our platform provides real-time updates on campaign
@@ -65,7 +70,7 @@ export default function AboutPage() {
 
           <Link
             href="/campaigns"
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold"
+            className="inline-block bg-gradient-to-r from-blue-600 to-indigo-500 hover:opacity-80 text-white px-10 py-3 rounded-xl font-semibold shadow-md transition"
           >
             Donate
           </Link>
@@ -73,22 +78,26 @@ export default function AboutPage() {
 
         {/* Team Section */}
         <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-8 text-center text-gray-800">
+          <h2 className="text-3xl font-extrabold mb-10 text-center text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-300">
             Meet Our Leadership & Team
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { name: "Margaret P. Reyes", role: "Field Manager" },
-              { name: "Rami J. Samson", role: "Tech Lead" },
-              { name: "Metzi S. Tura", role: "Program Manager" },
+              { name: "Clark Valle", role: "Field Manager" },
+              { name: "Remar Sansait", role: "Tech Lead" },
+              { name: "Metz S. Tura", role: "Program Manager" },
               { name: "Karen C. Cantalaba", role: "Director" },
             ].map((member, idx) => (
-              <div key={idx} className="text-center">
-                <div className="w-32 h-32 bg-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-3xl font-bold">
+              <div
+                key={idx}
+                className="text-center bg-white/10 rounded-2xl p-6 border border-white/10 shadow-xl hover:-translate-y-1 transition"
+              >
+                <div className="w-32 h-32 bg-gradient-to-br from-purple-600 to-indigo-500 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
                   {member.name.charAt(0)}
                 </div>
-                <h3 className="font-semibold text-gray-800">{member.name}</h3>
-                <p className="text-gray-600 text-sm">{member.role}</p>
+                <h3 className="font-semibold text-white">{member.name}</h3>
+                <p className="text-gray-300 text-sm">{member.role}</p>
               </div>
             ))}
           </div>
@@ -97,4 +106,3 @@ export default function AboutPage() {
     </main>
   );
 }
-

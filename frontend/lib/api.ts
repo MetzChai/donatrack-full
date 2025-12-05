@@ -227,6 +227,31 @@ export const deleteUser = async (userId: string, token: string) => {
   }
 };
 
+export const getAllDonationsAdmin = async (_token: string) => {
+  try {
+    // For admins, aggregate donations across all campaigns using existing public endpoints.
+    const campaigns = await getCampaigns();
+    if (!campaigns.length) return [];
+
+    const logsPerCampaign = await Promise.all(
+      campaigns.map((c: any) => getDonationLogs(c.id))
+    );
+
+    const allLogs = logsPerCampaign.flat().map((log) => {
+      const campaign = campaigns.find((c: any) => c.id === log.campaignId);
+      return {
+        ...log,
+        campaignTitle: campaign?.title || "Unknown Campaign",
+      };
+    });
+
+    return allLogs;
+  } catch (err) {
+    console.error("Failed to fetch all donations for admin:", err);
+    return [];
+  }
+};
+
 // Admin Campaign APIs
 export const getActiveCampaigns = async (token: string) => {
   try {

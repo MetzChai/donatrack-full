@@ -7,6 +7,7 @@ import {
   getActiveCampaigns,
   getCampaignHistory,
   deleteCampaign,
+  getAllDonations,
 } from "../controllers/admin.controller";
 import { protect } from "../middleware/auth.middleware";
 
@@ -19,5 +20,6 @@ router.delete("/users/:id", protect(["ADMIN"]), deleteUser);
 router.get("/campaigns/active", protect(["ADMIN"]), getActiveCampaigns);
 router.get("/campaigns/history", protect(["ADMIN"]), getCampaignHistory);
 router.delete("/campaigns/:id", protect(["ADMIN"]), deleteCampaign);
+router.get("/donations", protect(["ADMIN"]), getAllDonations);
 
 export default router;
