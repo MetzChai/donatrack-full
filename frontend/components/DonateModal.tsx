@@ -168,7 +168,7 @@ export default function DonateModal({
                 <div>
                   <label className="block text-sm font-medium text-gray-900 mb-1">Amount</label>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-gray-900">$</span>
+                    <span className="text-gray-900">₱</span>
                     <input
                       type="number"
                       placeholder="Enter amount"
@@ -187,7 +187,7 @@ export default function DonateModal({
                         onClick={() => setAmount(preset.toString())}
                         className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded text-sm font-medium text-gray-900 transition"
                       >
-                        ${preset}
+                        ₱{preset}
                       </button>
                     ))}
                   </div>

@@ -8,6 +8,7 @@ import campaignsRoutes from "./routes/campaigns.routes";
 import donationsRoutes from "./routes/donations.routes";
 import adminRoutes from "./routes/admin.routes";
 import fundsRoutes from "./routes/funds.routes";
+import proofRoutes from "./routes/proof.routes";
 import passport from "./config/passport";
 
 dotenv.config();
@@ -31,6 +32,7 @@ app.use("/campaigns", campaignsRoutes);
 app.use("/donations", donationsRoutes);
 app.use("/admin", adminRoutes);
 app.use("/funds", fundsRoutes);
+app.use("/proofs", proofRoutes);
 
 // Legacy auth routes (for backward compatibility)
 app.use("/auth", authRoutes);

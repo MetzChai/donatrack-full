@@ -56,6 +56,16 @@ export default function Header() {
                   Donations
                 </Link>
                 <Link
+                  href="/transparency"
+                  className={`pb-1 ${
+                    isActive("/transparency")
+                      ? "border-b-2 border-green-500 text-white"
+                      : "hover:text-gray-300"
+                  }`}
+                >
+                  Transparency
+                </Link>
+                <Link
                   href="/about"
                   className={`pb-1 ${
                     isActive("/about")

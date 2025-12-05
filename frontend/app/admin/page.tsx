@@ -12,6 +12,11 @@ import {
   createCampaign,
   updateCampaign,
   endCampaign,
+  getAllProofs,
+  createProof,
+  updateProof,
+  deleteProof,
+  getCampaigns,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedPage from "@/components/ProtectedPage";
@@ -21,16 +26,26 @@ function AdminPageContent() {
   const [stats, setStats] = useState<any>(null);
   const [activeCampaigns, setActiveCampaigns] = useState<any[]>([]);
   const [campaignHistory, setCampaignHistory] = useState<any[]>([]);
+  const [proofs, setProofs] = useState<any[]>([]);
+  const [allCampaigns, setAllCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [newRole, setNewRole] = useState<string>("");
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
+  const [showProofModal, setShowProofModal] = useState(false);
+  const [editingProof, setEditingProof] = useState<any>(null);
   const [campaignForm, setCampaignForm] = useState({
     title: "",
     description: "",
     goalAmount: "",
     imageUrl: "",
+  });
+  const [proofForm, setProofForm] = useState({
+    title: "",
+    description: "",
+    imageUrl: "",
+    campaignId: "",
   });
 
   const { user: currentUser } = useAuth();
@@ -47,16 +62,20 @@ function AdminPageContent() {
     if (!token) return;
 
     try {
-      const [usersData, statsData, activeData, historyData] = await Promise.all([
+      const [usersData, statsData, activeData, historyData, proofsData, campaignsData] = await Promise.all([
         getUsers(token),
         getAdminStats(token),
         getActiveCampaigns(token),
         getCampaignHistory(token),
+        getAllProofs(),
+        getCampaigns(),
       ]);
       setUsers(usersData);
       setStats(statsData);
       setActiveCampaigns(activeData);
       setCampaignHistory(historyData);
+      setProofs(proofsData);
+      setAllCampaigns(campaignsData);
     } catch (err) {
       console.error("Failed to fetch admin data", err);
       alert("Failed to load admin data");
@@ -200,6 +219,83 @@ function AdminPageContent() {
       fetchAllData();
     } catch (err: any) {
       alert(err.error || "Failed to end campaign");
+    }
+  };
+
+  const handleOpenProofModal = (proof?: any) => {
+    if (proof) {
+      setEditingProof(proof);
+      setProofForm({
+        title: proof.title,
+        description: proof.description,
+        imageUrl: proof.imageUrl,
+        campaignId: proof.campaignId,
+      });
+    } else {
+      setEditingProof(null);
+      setProofForm({
+        title: "",
+        description: "",
+        imageUrl: "",
+        campaignId: "",
+      });
+    }
+    setShowProofModal(true);
+  };
+
+  const handleCloseProofModal = () => {
+    setShowProofModal(false);
+    setEditingProof(null);
+    setProofForm({
+      title: "",
+      description: "",
+      imageUrl: "",
+      campaignId: "",
+    });
+  };
+
+  const handleSaveProof = async () => {
+    if (!proofForm.title || !proofForm.description || !proofForm.imageUrl || !proofForm.campaignId) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("No authentication token found. Please log in again.");
+      return;
+    }
+
+    try {
+      console.log("Saving proof:", proofForm);
+      if (editingProof) {
+        await updateProof(editingProof.id, proofForm, token);
+        alert("Proof updated successfully");
+      } else {
+        await createProof(proofForm, token);
+        alert("Proof created successfully");
+      }
+      handleCloseProofModal();
+      fetchAllData();
+    } catch (err: any) {
+      console.error("Error saving proof:", err);
+      const errorMessage = err?.error || err?.message || err?.details || "Failed to save proof. Please check the console for details.";
+      alert(`Error: ${errorMessage}${err?.code ? ` (Code: ${err.code})` : ""}`);
+    }
+  };
+
+  const handleDeleteProof = async (proofId: string) => {
+    if (!confirm("Are you sure you want to delete this proof?")) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      await deleteProof(proofId, token);
+      alert("Proof deleted successfully");
+      fetchAllData();
+    } catch (err: any) {
+      alert(err.error || "Failed to delete proof");
     }
   };
 
@@ -371,6 +467,78 @@ function AdminPageContent() {
         )}
       </section>
 
+      {/* Proof/Transparency Management Section */}
+      <section className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
+          <h2 className="text-2xl font-semibold">Transparency & Proof Management</h2>
+          <button
+            onClick={() => handleOpenProofModal()}
+            className="bg-gradient-to-r from-emerald-500 to-green-400 hover:opacity-90 transition px-4 py-2 rounded-lg text-sm font-semibold shadow"
+          >
+            + Add Proof
+          </button>
+        </div>
+        {proofs.length === 0 ? (
+          <p className="text-gray-400">No proof records found.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white/5 backdrop-blur-sm border border-white/6 rounded-2xl overflow-hidden shadow-xl">
+              <thead className="bg-white/20 text-gray-300 text-sm uppercase tracking-wide">
+                <tr>
+                  <th className="p-4 text-left">Image</th>
+                  <th className="p-4 text-left">Title</th>
+                  <th className="p-4 text-left">Campaign</th>
+                  <th className="p-4 text-left">Description</th>
+                  <th className="p-4 text-left">Created</th>
+                  <th className="p-4 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {proofs.map((proof) => (
+                  <tr key={proof.id} className="border-b border-white/10 hover:bg-white/8 transition">
+                    <td className="p-4">
+                      <img
+                        src={proof.imageUrl}
+                        alt={proof.title}
+                        className="w-20 h-20 object-cover rounded-lg"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://via.placeholder.com/80x80?text=Image";
+                        }}
+                      />
+                    </td>
+                    <td className="p-4 font-semibold">{proof.title}</td>
+                    <td className="p-4">{proof.campaign?.title || "Unknown"}</td>
+                    <td className="p-4 text-sm text-gray-300 max-w-xs truncate">
+                      {proof.description}
+                    </td>
+                    <td className="p-4 text-sm text-gray-400">
+                      {new Date(proof.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleOpenProofModal(proof)}
+                          className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:opacity-90 transition px-3 py-1 rounded text-xs font-semibold shadow"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProof(proof.id)}
+                          className="bg-gradient-to-r from-rose-500 to-red-500 hover:opacity-90 transition px-3 py-1 rounded text-xs font-semibold shadow"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       {/* Users Management Section */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">User Management</h2>
@@ -519,10 +687,9 @@ function AdminPageContent() {
             <select
               value={newRole}
               onChange={(e) => setNewRole(e.target.value)}
-              className="w-full bg-white/6 border border-white/6 text-white p-3 rounded-lg mb-4 focus:outline-none focus:border-emerald-400 transition"
+              className="w-full bg-white/6 border border-white/6 text-black p-3 rounded-lg mb-4 focus:outline-none focus:border-emerald-400 transition"
             >
               <option value="USER">USER</option>
-              <option value="CREATOR">CREATOR</option>
               <option value="ADMIN">ADMIN</option>
             </select>
             <div className="flex gap-2">
@@ -537,6 +704,88 @@ function AdminPageContent() {
                   setSelectedUser(null);
                   setNewRole("");
                 }}
+                className="flex-1 bg-white/6 hover:opacity-90 py-2 rounded-lg shadow"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Proof Modal */}
+      {showProofModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#0b1220] border border-white/8 p-6 rounded-2xl max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold mb-4">
+              {editingProof ? "Edit Proof" : "Create New Proof"}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Campaign *</label>
+                <select
+                  value={proofForm.campaignId}
+                  onChange={(e) => setProofForm({ ...proofForm, campaignId: e.target.value })}
+                  className="w-full bg-white/20 border border-white/6 text-black placeholder:text-white/70 p-3 rounded-lg focus:outline-none focus:border-emerald-300 focus:bg-white/10 transition"
+                >
+                  <option value="">Select a campaign</option>
+                  {allCampaigns.map((campaign) => (
+                    <option key={campaign.id} value={campaign.id}>
+                      {campaign.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Title *</label>
+                <input
+                  type="text"
+                  value={proofForm.title}
+                  onChange={(e) => setProofForm({ ...proofForm, title: e.target.value })}
+                  className="w-full bg-white/5 border border-white/30 text-white placeholder:text-white/70 p-3 rounded-lg focus:outline-none focus:border-emerald-300 focus:bg-white/10 transition"
+                  placeholder="Proof title (e.g., 'Food Distribution Event')"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Description *</label>
+                <textarea
+                  value={proofForm.description}
+                  onChange={(e) => setProofForm({ ...proofForm, description: e.target.value })}
+                  className="w-full bg-white/5 border border-white/30 text-white placeholder:text-white/70 p-3 rounded-lg focus:outline-none focus:border-emerald-300 focus:bg-white/10 transition"
+                  rows={4}
+                  placeholder="Describe how the donations were used..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Image URL *</label>
+                <input
+                  type="url"
+                  value={proofForm.imageUrl}
+                  onChange={(e) => setProofForm({ ...proofForm, imageUrl: e.target.value })}
+                  className="w-full bg-white/5 border border-white/30 text-white placeholder:text-white/70 p-3 rounded-lg focus:outline-none focus:border-emerald-300 focus:bg-white/10 transition"
+                  placeholder="https://example.com/proof-image.jpg"
+                />
+                {proofForm.imageUrl && (
+                  <img
+                    src={proofForm.imageUrl}
+                    alt="Preview"
+                    className="mt-2 w-full h-48 object-cover rounded-lg"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={handleSaveProof}
+                className="flex-1 bg-gradient-to-r from-emerald-500 to-green-400 hover:opacity-90 py-2 rounded-lg font-semibold shadow"
+              >
+                {editingProof ? "Update" : "Create"}
+              </button>
+              <button
+                onClick={handleCloseProofModal}
                 className="flex-1 bg-white/6 hover:opacity-90 py-2 rounded-lg shadow"
               >
                 Cancel

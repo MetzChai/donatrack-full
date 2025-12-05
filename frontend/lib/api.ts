@@ -282,3 +282,59 @@ export const deleteCampaign = async (campaignId: string, token: string) => {
     throw err.response?.data || err;
   }
 };
+
+// Proof/Transparency APIs
+export const getAllProofs = async () => {
+  try {
+    const res = await API.get("/proofs");
+    return res.data || [];
+  } catch (err) {
+    console.error("Failed to fetch proofs:", err);
+    return [];
+  }
+};
+
+export const getProofsByCampaign = async (campaignId: string) => {
+  try {
+    const res = await API.get(`/proofs/campaign/${campaignId}`);
+    return res.data || [];
+  } catch (err) {
+    console.error("Failed to fetch proofs by campaign:", err);
+    return [];
+  }
+};
+
+export const createProof = async (data: any, token: string) => {
+  try {
+    console.log("Creating proof with data:", data);
+    console.log("Using token:", token ? "Token present" : "No token");
+    const res = await API.post("/proofs", data, getAuthHeaders(token));
+    console.log("Proof created successfully:", res.data);
+    return res.data;
+  } catch (err: any) {
+    console.error("Failed to create proof - Full error:", err);
+    console.error("Error response:", err.response);
+    console.error("Error data:", err.response?.data);
+    throw err.response?.data || { error: err.message || "Failed to create proof" };
+  }
+};
+
+export const updateProof = async (id: string, data: any, token: string) => {
+  try {
+    const res = await API.put(`/proofs/${id}`, data, getAuthHeaders(token));
+    return res.data;
+  } catch (err: any) {
+    console.error("Failed to update proof:", err);
+    throw err.response?.data || err;
+  }
+};
+
+export const deleteProof = async (id: string, token: string) => {
+  try {
+    const res = await API.delete(`/proofs/${id}`, getAuthHeaders(token));
+    return res.data;
+  } catch (err: any) {
+    console.error("Failed to delete proof:", err);
+    throw err.response?.data || err;
+  }
+};

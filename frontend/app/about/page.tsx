@@ -10,7 +10,7 @@ export default function AboutPage() {
 
         <div className="text-center mb-14">
           <h1 className="text-4xl font-extrabold mb-4 tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-300">
-            About Us. See Where Every Dollar Goes.
+            About Us. See Where Your Money Goes.
           </h1>
           <p className="text-lg text-gray-300">
             Getting Change with Radical Transparency
@@ -37,20 +37,17 @@ export default function AboutPage() {
             <ul className="space-y-3">
               <li className="flex items-center gap-3">
                 <span className="text-emerald-400 text-xl">✓</span>
-                <span className="text-gray-200">Action to World Transparency</span>
+                <span className="text-gray-200">Simple. Traceability</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-emerald-400 text-xl">✓</span>
-                <span className="text-gray-200">Verified Recipient Confirmation</span>
+                <span className="text-gray-200">User-friendly</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-emerald-400 text-xl">✓</span>
-                <span className="text-gray-200">Real-Time Impact Feedback</span>
+                <span className="text-gray-200">Fund Specific, Tangible Goals</span>
               </li>
-              <li className="flex items-center gap-3">
-                <span className="text-emerald-400 text-xl">✓</span>
-                <span className="text-gray-200">Fund-raising, No Tangible Goods</span>
-              </li>
+            
               <li className="flex items-center gap-3">
                 <span className="text-emerald-400 text-xl">✓</span>
                 <span className="text-gray-200">Clear-cut Head Breakdown</span>
@@ -63,7 +60,7 @@ export default function AboutPage() {
             <p className="text-gray-300 leading-relaxed">
               At DONATRACK, we believe in complete transparency. Every donation you make is tracked,
               verified, and reported back to you. We ensure that your contributions reach the intended
-              recipients and make a real impact. Our platform provides real-time updates on campaign
+              recipients and make a real impact. Our platform provide updates on campaign
               progress, so you can see exactly how your generosity is changing lives.
             </p>
           </div>
@@ -84,17 +81,37 @@ export default function AboutPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { name: "Clark Valle", role: "Field Manager" },
-              { name: "Remar Sansait", role: "Tech Lead" },
-              { name: "Metz S. Tura", role: "Program Manager" },
-              { name: "Karen C. Cantalaba", role: "Director" },
+              {
+                name: "Clark Valle",
+                role: "Field Manager",
+                img: "Clark.png",
+              },
+              {
+                name: "Remar Sansait",
+                role: "Tech Lead",
+                img: "Remar.jpg",
+              },
+              {
+                name: "Metz S. Tura",
+                role: "Program Manager",
+                img: "metz-id.jpg",
+              },
+              {
+                name: "Karen C. Cantalaba",
+                role: "Director",
+                img: "kAREN.png",
+              },
             ].map((member, idx) => (
               <div
                 key={idx}
                 className="text-center bg-white/10 rounded-2xl p-6 border border-white/10 shadow-xl hover:-translate-y-1 transition"
               >
-                <div className="w-32 h-32 bg-gradient-to-br from-purple-600 to-indigo-500 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-4xl font-bold shadow-lg">
-                  {member.name.charAt(0)}
+                <div className="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-2 border-emerald-300 shadow-lg">
+                  <img
+                    src={member.img}
+                    alt={member.name}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <h3 className="font-semibold text-white">{member.name}</h3>
                 <p className="text-gray-300 text-sm">{member.role}</p>

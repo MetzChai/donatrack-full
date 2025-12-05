@@ -6,7 +6,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding database...");
 
-  // wipe existing (use carefully)
+  // Only seed if database is empty (safer approach)
+  const userCount = await prisma.user.count();
+  if (userCount > 0) {
+    console.log("Database already has data. Skipping seed to prevent data loss.");
+    return;
+  }
+
+  // wipe existing (use carefully) - only runs if database is empty
   await prisma.donation.deleteMany();
   await prisma.campaign.deleteMany();
   await prisma.user.deleteMany();

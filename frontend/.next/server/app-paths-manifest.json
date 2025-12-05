@@ -1,7 +1,7 @@
 {
-  "/auth/reset-password/page": "app/auth/reset-password/page.js",
-  "/page": "app/page.js",
-  "/donate-history/page": "app/donate-history/page.js",
   "/about/page": "app/about/page.js",
-  "/admin/page": "app/admin/page.js"
+  "/auth/login/page": "app/auth/login/page.js",
+  "/campaigns/[id]/page": "app/campaigns/[id]/page.js",
+  "/donate-history/page": "app/donate-history/page.js",
+  "/page": "app/page.js"
 }
