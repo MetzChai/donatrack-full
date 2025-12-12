@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const API = axios.create({
-  baseURL: "http://localhost:4000", // backend URL
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000", // backend URL
 });
 
 // Add token to requests
@@ -71,6 +71,38 @@ export const getCampaigns = async () => {
   } catch (err) {
     console.error("Failed to fetch campaigns:", err);
     return [];
+  }
+};
+
+export const getEndedCampaigns = async () => {
+  try {
+    console.log("Fetching ended campaigns from:", API.defaults.baseURL + "/campaigns/ended");
+    const res = await API.get("/campaigns/ended");
+    console.log("✓ Ended campaigns API response received");
+    console.log("Response status:", res.status);
+    console.log("Ended campaigns fetched:", res.data?.length || 0, "items");
+    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+      console.log("Sample ended campaign:", res.data[0]);
+    } else if (res.data && !Array.isArray(res.data)) {
+      console.warn("⚠ Response data is not an array:", typeof res.data, res.data);
+    }
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err: any) {
+    console.error("✗ Failed to fetch ended campaigns:", err);
+    console.error("Error message:", err.message);
+    console.error("Error response:", err.response?.data);
+    console.error("Error status:", err.response?.status);
+    return [];
+  }
+};
+
+export const markCampaignAsImplemented = async (campaignId: string, token: string) => {
+  try {
+    const res = await API.patch(`/campaigns/${campaignId}/implemented`, {}, getAuthHeaders(token));
+    return res.data;
+  } catch (err: any) {
+    console.error("Failed to mark campaign as implemented:", err);
+    throw err.response?.data || err;
   }
 };
 
@@ -166,12 +198,45 @@ export const getMyFunds = async (token: string) => {
   }
 };
 
-export const withdrawFunds = async (amount: number, token: string) => {
+export const withdrawFunds = async (amount: number, token: string, campaignId?: string) => {
   try {
-    const res = await API.post("/funds/withdraw", { amount }, getAuthHeaders(token));
+    const res = await API.post("/funds/withdraw", { amount, campaignId }, getAuthHeaders(token));
     return res.data;
   } catch (err: any) {
     console.error("Withdrawal failed:", err);
+    // Extract error message from axios error response
+    const errorData = err.response?.data || err;
+    console.error("Error details:", errorData);
+    throw errorData;
+  }
+};
+
+export const getWithdrawals = async (token: string) => {
+  try {
+    const res = await API.get("/funds/withdrawals", getAuthHeaders(token));
+    return res.data || [];
+  } catch (err) {
+    console.error("Failed to fetch withdrawals:", err);
+    return [];
+  }
+};
+
+export const getMyWithdrawals = async (token: string) => {
+  try {
+    const res = await API.get("/funds/withdrawals/my", getAuthHeaders(token));
+    return res.data || [];
+  } catch (err) {
+    console.error("Failed to fetch my withdrawals:", err);
+    return [];
+  }
+};
+
+export const updateWithdrawalStatus = async (id: string, status: string, token: string) => {
+  try {
+    const res = await API.patch(`/funds/withdrawals/${id}/status`, { status }, getAuthHeaders(token));
+    return res.data;
+  } catch (err: any) {
+    console.error("Failed to update withdrawal status:", err);
     throw err.response?.data || err;
   }
 };
@@ -286,10 +351,23 @@ export const deleteCampaign = async (campaignId: string, token: string) => {
 // Proof/Transparency APIs
 export const getAllProofs = async () => {
   try {
+    console.log("Fetching proofs from:", API.defaults.baseURL + "/proofs");
     const res = await API.get("/proofs");
-    return res.data || [];
-  } catch (err) {
-    console.error("Failed to fetch proofs:", err);
+    console.log("✓ Proofs API response received");
+    console.log("Response status:", res.status);
+    console.log("Proofs fetched:", res.data?.length || 0, "items");
+    if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+      console.log("Sample proof:", res.data[0]);
+    } else if (res.data && !Array.isArray(res.data)) {
+      console.warn("⚠ Response data is not an array:", typeof res.data, res.data);
+    }
+    return Array.isArray(res.data) ? res.data : [];
+  } catch (err: any) {
+    console.error("✗ Failed to fetch proofs:", err);
+    console.error("Error message:", err.message);
+    console.error("Error response:", err.response?.data);
+    console.error("Error status:", err.response?.status);
+    console.error("Full error:", err);
     return [];
   }
 };

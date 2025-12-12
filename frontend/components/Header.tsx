@@ -56,6 +56,16 @@ export default function Header() {
                   Donations
                 </Link>
                 <Link
+                  href="/campaigns/ended"
+                  className={`pb-1 ${
+                    isActive("/campaigns/ended")
+                      ? "border-b-2 border-green-500 text-white"
+                      : "hover:text-gray-300"
+                  }`}
+                >
+                  Campaign History
+                </Link>
+                <Link
                   href="/transparency"
                   className={`pb-1 ${
                     isActive("/transparency")
@@ -65,6 +75,18 @@ export default function Header() {
                 >
                   Transparency
                 </Link>
+                {(user.role === "ADMIN" || user.role === "CREATOR") && (
+                  <Link
+                    href="/withdrawals"
+                    className={`pb-1 ${
+                      isActive("/withdrawals")
+                        ? "border-b-2 border-green-500 text-white"
+                        : "hover:text-gray-300"
+                    }`}
+                  >
+                    Withdrawals
+                  </Link>
+                )}
                 <Link
                   href="/about"
                   className={`pb-1 ${

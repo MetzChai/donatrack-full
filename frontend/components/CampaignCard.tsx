@@ -12,6 +12,7 @@ interface CampaignCardProps {
     collected: number;
     imageUrl?: string;
     isEnded?: boolean;
+    isImplemented?: boolean;
     user?: {
       id: string;
       email: string;
@@ -48,7 +49,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
           <div className="mt-auto">
             <div className="flex justify-between items-center mb-2 text-sm text-gray-600">
               <span>Funded</span>
-              <span className="font-semibold text-gray-800">${campaign.collected.toFixed(2)}</span>
+              <span className="font-semibold text-gray-800">₱{campaign.collected.toFixed(2)}</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
               <div
@@ -59,7 +60,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
               />
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-600">Goal: ${campaign.goalAmount.toFixed(2)}</span>
+              <span className="text-gray-600">Goal: ₱{campaign.goalAmount.toFixed(2)}</span>
               <span
                 className={`font-semibold ${
                   percentage >= 65 ? "text-green-600" : "text-red-600"
@@ -69,7 +70,13 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign }) => {
               </span>
             </div>
             {campaign.isEnded && (
-              <p className="text-red-500 text-xs mt-1 font-medium">• Campaign Ended</p>
+              <div className="mt-2">
+                {campaign.isImplemented ? (
+                  <p className="text-green-600 text-xs font-medium">✓ Campaign Implemented</p>
+                ) : (
+                  <p className="text-yellow-600 text-xs font-medium">• Campaign Ended - Implementation Pending</p>
+                )}
+              </div>
             )}
           </div>
         </div>

@@ -13,14 +13,19 @@ export default function TransparencyPage() {
   useEffect(() => {
     async function fetchData() {
       try {
+        console.log("Fetching transparency data...");
         const [proofsData, campaignsData] = await Promise.all([
           getAllProofs(),
           getCampaigns(),
         ]);
-        setProofs(proofsData);
-        setCampaigns(campaignsData);
+        console.log("Proofs received:", proofsData?.length || 0);
+        console.log("Campaigns received:", campaignsData?.length || 0);
+        setProofs(proofsData || []);
+        setCampaigns(campaignsData || []);
       } catch (err) {
         console.error("Failed to fetch transparency data", err);
+        setProofs([]);
+        setCampaigns([]);
       } finally {
         setLoading(false);
       }
@@ -103,17 +108,48 @@ export default function TransparencyPage() {
                 key={proof.id}
                 className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden shadow-xl hover:bg-white/8 transition-all duration-300"
               >
-                {/* Proof Image */}
+                {/* Proof Images */}
                 <div className="relative h-64 overflow-hidden">
-                  <img
-                    src={proof.imageUrl}
-                    alt={proof.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://via.placeholder.com/400x300?text=Proof+Image";
-                    }}
-                  />
+                  {(() => {
+                    const images = proof.imageUrls || (proof.imageUrl ? [proof.imageUrl] : []);
+                    if (images.length === 0) {
+                      return (
+                        <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                          <span className="text-gray-400">No images</span>
+                        </div>
+                      );
+                    }
+                    if (images.length === 1) {
+                      return (
+                        <img
+                          src={images[0]}
+                          alt={proof.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "https://via.placeholder.com/400x300?text=Proof+Image";
+                          }}
+                        />
+                      );
+                    }
+                    // Multiple images - show carousel or grid
+                    return (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={images[0]}
+                          alt={proof.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "https://via.placeholder.com/400x300?text=Proof+Image";
+                          }}
+                        />
+                        <div className="absolute bottom-2 right-2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-semibold">
+                          {images.length} images
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="absolute top-4 right-4 bg-emerald-500/90 text-white px-3 py-1 rounded-full text-xs font-semibold">
                     Verified
                   </div>

@@ -7,7 +7,11 @@
     "dev": "nodemon --exec ts-node -r tsconfig-paths/register src/server.ts",
     "start": "node ./dist/server.js",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "ts-node prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",

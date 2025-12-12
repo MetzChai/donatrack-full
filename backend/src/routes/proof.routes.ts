@@ -37,6 +37,31 @@ router.get("/test", async (_req, res) => {
 router.get("/", getAllProofs);
 router.get("/campaign/:campaignId", getProofsByCampaign);
 
+// Diagnostic endpoint
+router.get("/debug", async (_req, res) => {
+  try {
+    const prisma = (await import("../services/prisma.service")).default;
+    const count = await prisma.proof.count();
+    const sample = await prisma.proof.findFirst();
+    
+    res.json({
+      success: true,
+      count,
+      hasProofs: count > 0,
+      sample: sample || null,
+      message: count > 0 
+        ? `Found ${count} proof(s) in database` 
+        : "No proofs found in database. Create a proof from the admin dashboard first.",
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      error: err.message,
+      code: err.code,
+    });
+  }
+});
+
 // Admin-only routes
 router.post("/", protect(["ADMIN"]), createProof);
 router.put("/:id", protect(["ADMIN"]), updateProof);

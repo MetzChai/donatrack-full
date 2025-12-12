@@ -8,6 +8,7 @@ import {
   withdrawFunds,
   updateXenditKeys,
   endCampaign,
+  markCampaignAsImplemented,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedPage from "@/components/ProtectedPage";
@@ -19,6 +20,7 @@ function UserDashboardContent() {
   const [funds, setFunds] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
   const [showXenditKeys, setShowXenditKeys] = useState(false);
   const [xenditKeys, setXenditKeys] = useState({
     xenditApiKey: "",
@@ -37,7 +39,7 @@ function UserDashboardContent() {
         const donationsData = await getMyDonations(token);
         setDonations(donationsData);
 
-        if (currentUser.role === "ADMIN") {
+        if (currentUser.role === "ADMIN" || currentUser.role === "CREATOR") {
           const [campaignsData, fundsData] = await Promise.all([
             getMyCampaigns(token),
             getMyFunds(token),
@@ -72,14 +74,30 @@ function UserDashboardContent() {
       return;
     }
 
+    // If campaign is selected, validate campaign has enough funds
+    if (selectedCampaignId) {
+      const selectedCampaign = campaigns.find((c) => c.id === selectedCampaignId);
+      if (selectedCampaign && amount > selectedCampaign.collected) {
+        alert("Insufficient campaign funds. Campaign collected amount is less than withdrawal amount");
+        return;
+      }
+    }
+
     try {
-      await withdrawFunds(amount, token);
-      const updatedFunds = await getMyFunds(token);
+      await withdrawFunds(amount, token, selectedCampaignId || undefined);
+      const [updatedFunds, updatedCampaigns] = await Promise.all([
+        getMyFunds(token),
+        getMyCampaigns(token),
+      ]);
       setFunds(updatedFunds);
+      setCampaigns(updatedCampaigns);
       setWithdrawAmount("");
+      setSelectedCampaignId("");
       alert("Withdrawal request processed successfully");
     } catch (err: any) {
-      alert(err.error || "Withdrawal failed");
+      const errorMsg = err.response?.data?.error || err.error || err.message || "Withdrawal failed. Please check your balance and try again.";
+      alert(errorMsg);
+      console.error("Withdrawal error details:", err);
     }
   };
 
@@ -115,6 +133,24 @@ function UserDashboardContent() {
     }
   };
 
+  const handleMarkAsImplemented = async (campaignId: string) => {
+    if (!confirm("Mark this campaign as implemented? This will preserve the collected amount and prevent further withdrawals from this campaign.")) {
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      await markCampaignAsImplemented(campaignId, token);
+      const updatedCampaigns = await getMyCampaigns(token);
+      setCampaigns(updatedCampaigns);
+      alert("Campaign marked as implemented successfully");
+    } catch (err: any) {
+      alert(err.error || "Failed to mark campaign as implemented");
+    }
+  };
+
   if (loading) {
     return (
       <main className="p-8 min-h-screen flex items-center justify-center bg-gray-100">
@@ -124,12 +160,21 @@ function UserDashboardContent() {
   }
 
   const isAdmin = currentUser?.role === "ADMIN";
+  const isCreator = currentUser?.role === "CREATOR";
+  const canManageFunds = isAdmin || isCreator;
 
   return (
     <main className="p-8 min-h-screen bg-gray-100 text-gray-900">
-      <h1 className="text-3xl font-bold mb-6">My Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-2">
+        {isCreator ? "Creator Dashboard" : isAdmin ? "Admin Dashboard" : "My Dashboard"}
+      </h1>
+      {isCreator && (
+        <p className="text-gray-600 mb-6">
+          Manage your campaigns, track donations, and withdraw funds from your campaigns.
+        </p>
+      )}
 
-      {isAdmin ? (
+      {canManageFunds ? (
         <section className="mb-8 bg-white p-6 rounded-lg shadow">
           <h2 className="text-2xl font-semibold mb-4">Funds Management</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -149,23 +194,51 @@ function UserDashboardContent() {
             </div>
           </div>
 
-          <div className="flex gap-4 mb-4">
-            <div className="flex-1">
-              <input
-                type="number"
-                placeholder="Withdrawal amount"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                className="w-full border border-gray-300 p-2 rounded"
-              />
+          <div className="space-y-4 mb-4">
+            {campaigns.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Campaign (Optional - for campaign-specific withdrawal)
+                </label>
+                <select
+                  value={selectedCampaignId}
+                  onChange={(e) => setSelectedCampaignId(e.target.value)}
+                  className="w-full border border-gray-300 p-2 rounded"
+                >
+                  <option value="">No specific campaign (general withdrawal)</option>
+                  {campaigns
+                    .filter((c) => c.collected > 0)
+                    .map((campaign) => (
+                      <option key={campaign.id} value={campaign.id}>
+                        {campaign.title} - ₱{campaign.collected.toFixed(2)} collected {campaign.isEnded ? "(Ended)" : "(Active)"}
+                      </option>
+                    ))}
+                </select>
+                {selectedCampaignId && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Withdrawing from this campaign will reduce its collected amount
+                  </p>
+                )}
+              </div>
+            )}
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <input
+                  type="number"
+                  placeholder="Withdrawal amount"
+                  value={withdrawAmount}
+                  onChange={(e) => setWithdrawAmount(e.target.value)}
+                  className="w-full border border-gray-300 p-2 rounded"
+                />
+              </div>
+              <button
+                onClick={handleWithdraw}
+                disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded disabled:opacity-50"
+              >
+                Withdraw
+              </button>
             </div>
-            <button
-              onClick={handleWithdraw}
-              disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0}
-              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded disabled:opacity-50"
-            >
-              Withdraw
-            </button>
           </div>
 
           <button
@@ -209,18 +282,25 @@ function UserDashboardContent() {
         </section>
       ) : (
         <section className="mb-8 bg-white p-6 rounded-lg shadow">
-          <h2 className="text-2xl font-semibold mb-2">Campaign Availability</h2>
-          <p className="text-gray-600">
-            Administrators manage campaigns to keep donation flows transparent. You can still review
-            every contribution you make below.
+          <h2 className="text-2xl font-semibold mb-2">Welcome!</h2>
+          <p className="text-gray-600 mb-4">
+            As a regular user, you can browse and donate to campaigns. Review all your contributions below.
           </p>
+          <Link
+            href="/campaigns"
+            className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded"
+          >
+            Browse Campaigns
+          </Link>
         </section>
       )}
 
-      {isAdmin && (
+      {canManageFunds && (
         <section className="mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">Managed Campaigns</h2>
+            <h2 className="text-2xl font-semibold">
+              {isCreator ? "My Campaigns" : "Managed Campaigns"}
+            </h2>
             <Link
               href="/campaigns/new"
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
@@ -255,7 +335,11 @@ function UserDashboardContent() {
                   <p className="text-gray-500 text-sm mb-2">
                     Status:{" "}
                     {campaign.isEnded ? (
-                      <span className="text-red-500">Ended</span>
+                      campaign.isImplemented ? (
+                        <span className="text-green-600 font-semibold">✓ Implemented</span>
+                      ) : (
+                        <span className="text-yellow-600">Ended - Pending Implementation</span>
+                      )
                     ) : (
                       <span className="text-green-600">Active</span>
                     )}
@@ -263,7 +347,7 @@ function UserDashboardContent() {
                   <p className="text-gray-500 text-xs mb-2">
                     Donations: {campaign.donations?.length || 0}
                   </p>
-                  <div className="flex gap-2 mt-2">
+                  <div className="flex gap-2 mt-2 flex-wrap">
                     <Link
                       href={`/campaigns/${campaign.id}`}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded text-center text-sm"
@@ -276,6 +360,14 @@ function UserDashboardContent() {
                         className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded text-sm"
                       >
                         End Campaign
+                      </button>
+                    )}
+                    {campaign.isEnded && !campaign.isImplemented && (
+                      <button
+                        onClick={() => handleMarkAsImplemented(campaign.id)}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm"
+                      >
+                        Mark Implemented
                       </button>
                     )}
                   </div>

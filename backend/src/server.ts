@@ -1,6 +1,7 @@
 import dotenv from 'dotenv'
 import app from './app'
 import prisma from './services/prisma.service'
+import { syncPendingDonations } from './controllers/donations.controller'
 
 dotenv.config()
 
@@ -15,6 +16,14 @@ app.listen(PORT, async () => {
   } catch (err) {
     console.error('Prisma failed to connect:', err)
   }
+
+  // Background poller to auto-complete pending Xendit payments if webhook is missing.
+  const interval = Number(process.env.PAYMENT_SYNC_INTERVAL_MS || 60000)
+  setInterval(() => {
+    syncPendingDonations().catch((err) =>
+      console.error('Sync pending donations failed', err)
+    )
+  }, interval)
 })
 
 

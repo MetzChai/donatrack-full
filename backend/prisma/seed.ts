@@ -36,6 +36,15 @@ async function main() {
     },
   });
 
+  const creator = await prisma.user.create({
+    data: {
+      fullName: "Campaign Creator",
+      email: "creator@example.com",
+      password: await hashPassword("creator123"),
+      role: "CREATOR",
+    },
+  });
+
   await prisma.campaign.create({
     data: {
       title: "Help Orphanage Children",
@@ -55,6 +64,17 @@ async function main() {
       collected: 3000,
       imageUrl: null,
       userId: admin.id,
+    },
+  });
+
+  await prisma.campaign.create({
+    data: {
+      title: "Education for All",
+      description: "Supporting education programs for underprivileged children",
+      goalAmount: 10000,
+      collected: 2500,
+      imageUrl: null,
+      userId: creator.id,
     },
   });
 

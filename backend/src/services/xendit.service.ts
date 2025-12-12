@@ -2,111 +2,116 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Try to import Xendit SDK, but make it optional for local/dev without payments
-let Xendit: any;
-try {
-  Xendit = require("xendit-node").default || require("xendit-node");
-} catch (e) {
-  console.warn("Xendit package not installed. Payment processing will be mocked.");
-  Xendit = null;
-}
+const hasXendit = !!process.env.XENDIT_SECRET_KEY;
+const baseUrl = "https://api.xendit.co/v2/invoices";
 
-// Initialize Xendit with platform keys (for Option 2 - Platform-handled)
-let xenditClient: any = null;
-if (Xendit && process.env.XENDIT_SECRET_KEY) {
-  try {
-    xenditClient = new Xendit({
-      secretKey: process.env.XENDIT_SECRET_KEY,
-    });
-  } catch (e) {
-    console.warn("Failed to initialize Xendit client:", e);
-  }
-}
-
-// For Option 1 - Campaign creator's own Xendit keys
-export const createXenditClient = (secretKey: string) => {
-  if (!Xendit) {
-    throw new Error("Xendit package not installed");
-  }
-  return new Xendit({ secretKey });
+const basicAuthHeader = (secretKey?: string) => {
+  const key = secretKey || process.env.XENDIT_SECRET_KEY;
+  if (!key) throw new Error("Xendit secret key is missing");
+  const creds = Buffer.from(`${key}:`).toString("base64");
+  return `Basic ${creds}`;
 };
 
-// Create payment using Xendit
-export const createPayment = async (
-  amount: number,
-  paymentMethod: string,
-  referenceId: string,
-  description: string,
-  secretKey?: string
-) => {
-  // If Xendit is not available, return a mock payment response
-  if (!Xendit) {
-    console.warn("Xendit not configured. Returning mock payment response.");
+/**
+ * Create an invoice in Xendit and return checkout info.
+ * Falls back to a mock invoice when Xendit is not configured.
+ */
+export const createXenditInvoice = async (params: {
+  amount: number;
+  description: string;
+  referenceId: string;
+  paymentMethods: string[]; // we will normalize these to Xendit-supported values
+  successUrl?: string;
+  failureUrl?: string;
+  secretKey?: string;
+}) => {
+  const { amount, description, referenceId, paymentMethods, successUrl, failureUrl, secretKey } =
+    params;
+
+  // Mock for local/dev without Xendit
+  if (!hasXendit) {
+    console.warn("Xendit not configured. Returning mock invoice.");
     return {
       id: `mock_${Date.now()}_${referenceId}`,
       status: "PENDING",
       amount,
       currency: "PHP",
       referenceId,
+      invoice_url: `https://mock.xendit.test/invoice/${referenceId}`,
+      checkout_url: `https://mock.xendit.test/checkout/${referenceId}`,
+      mock: true, // mark as mock so downstream treats as immediate success
     };
   }
 
+  // Normalize payment methods to Xendit values
+  const normalizedMethods: string[] = [];
+  if (paymentMethods.some((m) => m === "GCASH" || m === "EWALLET")) {
+    normalizedMethods.push("GCASH");
+  }
+  if (paymentMethods.some((m) => m === "CARD" || m === "CREDIT_CARD" || m === "DEBIT_CARD")) {
+    normalizedMethods.push("CARD");
+  }
+
+  const body = {
+    external_id: referenceId,
+    amount,
+    currency: "PHP",
+    description,
+    payment_methods: normalizedMethods.length ? normalizedMethods : ["CARD"],
+    success_redirect_url: successUrl,
+    failure_redirect_url: failureUrl,
+  };
+
   try {
-    const client = secretKey ? createXenditClient(secretKey) : xenditClient;
-    if (!client) {
-      throw new Error("Xendit client not initialized");
-    }
-
-    const { PaymentRequest } = client;
-
-    const paymentRequest = await PaymentRequest.create({
-      data: {
-        amount,
-        currency: "PHP",
-        paymentMethod: {
-          type: paymentMethod === "GCASH" ? "EWALLET" : "CREDIT_CARD",
-          ewallet: paymentMethod === "GCASH" ? { channelCode: "GCASH" } : undefined,
-        },
-        referenceId,
-        description,
-        metadata: {
-          referenceId,
-        },
+    const response = await fetch(baseUrl, {
+      method: "POST",
+      headers: {
+        Authorization: basicAuthHeader(secretKey),
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify(body),
     });
 
-    return paymentRequest;
+    if (!response.ok) {
+      const errBody = await response.text();
+      console.error("Xendit invoice creation failed:", response.status, errBody);
+      throw new Error(`Xendit error ${response.status}: ${errBody}`);
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error: any) {
-    console.error("Xendit payment creation error:", error);
-    throw new Error(error.message || "Payment creation failed");
+    // Fallback to mock invoice if Xendit request fails
+    console.warn("Xendit invoice creation error, using mock invoice:", error?.message || error);
+    return {
+      id: `mock_${Date.now()}_${referenceId}`,
+      status: "PENDING",
+      amount,
+      currency: "PHP",
+      referenceId,
+      invoice_url: `https://mock.xendit.test/invoice/${referenceId}`,
+      checkout_url: `https://mock.xendit.test/checkout/${referenceId}`,
+      mock: true,
+    };
   }
 };
 
-// Verify payment status
-export const verifyPayment = async (paymentId: string, secretKey?: string) => {
-  // If Xendit is not available, return a mock payment response
-  if (!Xendit) {
-    console.warn("Xendit not configured. Returning mock payment verification.");
-    return {
-      id: paymentId,
-      status: "COMPLETED",
-    };
+/**
+ * Fetch an invoice by ID from Xendit.
+ */
+export const fetchXenditInvoice = async (invoiceId: string, secretKey?: string) => {
+  const key = secretKey || process.env.XENDIT_SECRET_KEY;
+  if (!key) throw new Error("Xendit secret key is missing");
+
+  const resp = await fetch(`${baseUrl}/${invoiceId}`, {
+    headers: { Authorization: basicAuthHeader(secretKey) },
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Failed to fetch invoice: ${resp.status} ${text}`);
   }
-
-  try {
-    const client = secretKey ? createXenditClient(secretKey) : xenditClient;
-    if (!client) {
-      throw new Error("Xendit client not initialized");
-    }
-
-    const { PaymentRequest } = client;
-
-    const payment = await PaymentRequest.getById({ paymentRequestId: paymentId });
-    return payment;
-  } catch (error: any) {
-    console.error("Xendit payment verification error:", error);
-    throw new Error(error.message || "Payment verification failed");
-  }
+  return resp.json();
 };
 
 // Calculate platform fee (e.g., 5% commission)

@@ -39,7 +39,7 @@ export default function CampaignsPage() {
     <main className="p-8 min-h-screen bg-gray-900 text-white">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Browse Campaigns</h1>
-        {currentUser?.role === "ADMIN" && (
+        {(currentUser?.role === "ADMIN" || currentUser?.role === "CREATOR") && (
           <Link
             href="/campaigns/new"
             className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg font-semibold"

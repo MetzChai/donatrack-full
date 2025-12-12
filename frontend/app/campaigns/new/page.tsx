@@ -16,6 +16,8 @@ function NewCampaignPageContent() {
   const [loading, setLoading] = useState(false)
   const { user: currentUser } = useAuth()
   const isAdmin = currentUser?.role === 'ADMIN'
+  const isCreator = currentUser?.role === 'CREATOR'
+  const canCreateCampaign = isAdmin || isCreator
 
   async function handleSubmit(e: any) {
     e.preventDefault()
@@ -26,8 +28,8 @@ function NewCampaignPageContent() {
       return
     }
 
-    if (!isAdmin) {
-      alert('Only administrators can create campaigns')
+    if (!canCreateCampaign) {
+      alert('Only administrators and creators can create campaigns')
       return
     }
 
@@ -55,11 +57,11 @@ function NewCampaignPageContent() {
     }
   }
 
-  if (!isAdmin) {
+  if (!canCreateCampaign) {
     return (
       <main className="p-8 min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
-          <p className="mb-4">Only administrators can create campaigns.</p>
+          <p className="mb-4">Only administrators and creators can create campaigns.</p>
           <Link href="/" className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded">
             Go Back
           </Link>
@@ -135,7 +137,7 @@ function NewCampaignPageContent() {
 
 export default function NewCampaignPage() {
   return (
-    <ProtectedPage requiredRole="ADMIN">
+    <ProtectedPage>
       <NewCampaignPageContent />
     </ProtectedPage>
   )

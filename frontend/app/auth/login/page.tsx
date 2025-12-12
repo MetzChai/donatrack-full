@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { loginUser } from "../../../lib/api";
+import { loginUser, API } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
 import GuestPage from "../../../components/GuestPage";
 
@@ -13,6 +13,7 @@ function LoginPageContent() {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleAuthLoading, setGoogleAuthLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, refreshUser } = useAuth();
@@ -20,10 +21,30 @@ function LoginPageContent() {
   useEffect(() => {
     const googleToken = searchParams.get("token");
     const googleUser = searchParams.get("user");
+    const googleError = searchParams.get("error");
+    
+    let fallbackTimeout: NodeJS.Timeout | null = null;
 
+    // Handle Google OAuth error
+    if (googleError) {
+      setError("Google authentication failed. Please try again.");
+      setGoogleAuthLoading(false);
+      // Clean up URL params
+      router.replace("/auth/login");
+      return;
+    }
+
+    // Handle successful Google OAuth callback
     if (googleToken && googleUser) {
+      setGoogleAuthLoading(true);
+      
       try {
         const decodedUser = JSON.parse(atob(googleUser));
+        
+        // Validate decoded user data
+        if (!decodedUser.id || !decodedUser.email) {
+          throw new Error("Invalid user data received from Google");
+        }
         
         // Save to localStorage first
         if (typeof window !== "undefined") {
@@ -31,19 +52,43 @@ function LoginPageContent() {
           localStorage.setItem("user", JSON.stringify(decodedUser));
         }
         
-        // Update context
+        // Update context immediately
         login(googleToken, decodedUser);
         
-        // Wait for state to update, then redirect using Next.js router
+        // Determine redirect path based on role
+        const redirectPath = decodedUser.role === "ADMIN" 
+          ? "/admin" 
+          : decodedUser.role === "CREATOR" 
+          ? "/user" 
+          : "/";
+        
+        // Use window.location.href for a full page redirect (more reliable)
+        // This ensures the page fully reloads and the auth state is recognized
         setTimeout(() => {
-          const redirectPath = decodedUser.role === "ADMIN" ? "/admin" : "/";
-          router.replace(redirectPath);
-        }, 150);
+          window.location.href = redirectPath;
+        }, 100);
+        
+        // Fallback: if redirect doesn't happen within 3 seconds, try router
+        fallbackTimeout = setTimeout(() => {
+          setGoogleAuthLoading(false);
+          router.push(redirectPath);
+        }, 3000);
+        
       } catch (err) {
         console.error("Failed to parse Google user payload", err);
-        setError("Failed to authenticate with Google");
+        setError("Failed to authenticate with Google. Please try again.");
+        setGoogleAuthLoading(false);
+        // Clean up URL params on error
+        router.replace("/auth/login");
       }
     }
+    
+    // Cleanup function - clear timeout if component unmounts
+    return () => {
+      if (fallbackTimeout) {
+        clearTimeout(fallbackTimeout);
+      }
+    };
   }, [router, searchParams, login]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -88,6 +133,19 @@ function LoginPageContent() {
       setLoading(false);
     }
   };
+
+  // Show loading state during Google OAuth callback
+  if (googleAuthLoading) {
+    return (
+      <main className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold mb-2 text-gray-800">Completing sign in...</h1>
+          <p className="text-gray-600">Please wait while we sign you in with Google</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -168,7 +226,8 @@ function LoginPageContent() {
           <button
             type="button"
             onClick={() => {
-              const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+              // Use the same base URL as the API client for consistency
+              const baseUrl = API.defaults.baseURL || "http://localhost:4000";
               window.location.href = `${baseUrl}/api/auth/v1/google`;
             }}
             className="w-full border border-gray-300 rounded-lg py-3 flex items-center justify-center gap-2 hover:bg-gray-50"
@@ -189,10 +248,35 @@ function LoginPageContent() {
   );
 }
 
-export default function LoginPage() {
+function LoginPageWrapper() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+  const user = searchParams.get("user");
+  const isGoogleCallback = !!(token && user);
+  
+  // Don't wrap in GuestPage during Google OAuth callback to avoid redirect conflicts
+  if (isGoogleCallback) {
+    return <LoginPageContent />;
+  }
+  
   return (
     <GuestPage>
       <LoginPageContent />
     </GuestPage>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </main>
+    }>
+      <LoginPageWrapper />
+    </Suspense>
   );
 }

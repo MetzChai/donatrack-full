@@ -27,6 +27,8 @@ export default function GuestPage({ children }: GuestPageProps) {
 
           if (user?.role === "ADMIN") {
             router.replace("/admin");
+          } else if (user?.role === "CREATOR") {
+            router.replace("/user");
           } else {
             router.replace("/");
           }

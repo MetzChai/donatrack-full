@@ -30,6 +30,7 @@ model User {
 
   campaigns Campaign[]
   donations Donation[]
+  withdrawals Withdrawal[]
 }
 
 enum Role {
@@ -39,19 +40,21 @@ enum Role {
 }
 
 model Campaign {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  goalAmount  Float
-  collected   Float    @default(0)
-  imageUrl    String?
-  isEnded     Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  goalAmount    Float
+  collected     Float    @default(0)
+  imageUrl      String?
+  isEnded       Boolean  @default(false)
+  isImplemented Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
   user      User       @relation(fields: [userId], references: [id])
   userId    String
   donations Donation[]
   proofs    Proof[]
+  withdrawals Withdrawal[]
 }
 
 model Donation {
@@ -76,10 +79,21 @@ model Proof {
   id          String   @id @default(cuid())
   title       String
   description String
-  imageUrl    String   // Proof image showing donation usage
+  imageUrls   String[] // Multiple proof images showing donation usage
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   campaignId String
+}
+
+model Withdrawal {
+  id         String   @id @default(cuid())
+  amount     Float
+  status     String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+  campaignId String?
 }
