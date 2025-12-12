@@ -60,6 +60,11 @@ function UserDashboardContent() {
   }, [currentUser]);
 
   const handleWithdraw = async () => {
+    if (!canWithdraw) {
+      alert("Only admins can withdraw funds.");
+      return;
+    }
+
     const token = localStorage.getItem("token");
     if (!token) return;
 
@@ -162,6 +167,7 @@ function UserDashboardContent() {
   const isAdmin = currentUser?.role === "ADMIN";
   const isCreator = currentUser?.role === "CREATOR";
   const canManageFunds = isAdmin || isCreator;
+  const canWithdraw = isAdmin; // only admins can withdraw
 
   return (
     <main className="p-8 min-h-screen bg-gray-100 text-gray-900">
@@ -221,7 +227,7 @@ function UserDashboardContent() {
                 )}
               </div>
             )}
-            <div className="flex gap-4">
+            <div className="flex gap-4 items-end">
               <div className="flex-1">
                 <input
                   type="number"
@@ -229,11 +235,17 @@ function UserDashboardContent() {
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                   className="w-full border border-gray-300 p-2 rounded"
+                  disabled={!canWithdraw}
                 />
+                {!canWithdraw && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Only admins can submit withdrawals.
+                  </p>
+                )}
               </div>
               <button
                 onClick={handleWithdraw}
-                disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0}
+                disabled={!canWithdraw || !withdrawAmount || parseFloat(withdrawAmount) <= 0}
                 className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded disabled:opacity-50"
               >
                 Withdraw

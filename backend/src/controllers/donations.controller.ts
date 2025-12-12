@@ -93,15 +93,14 @@ export const donate = async (req: any, res: Response) => {
         data: { collected: { increment: donationAmount } },
       });
 
-      if (!(useCreatorKeys && campaign.user.xenditSecretKey)) {
-        await prisma.user.update({
-          where: { id: campaign.userId },
-          data: {
-            currentFunds: { increment: donationAmount },
-            withdrawableFunds: { increment: creatorAmount },
-          },
-        });
-      }
+      // Always credit creator balance for completed payments, even when using creator keys
+      await prisma.user.update({
+        where: { id: campaign.userId },
+        data: {
+          currentFunds: { increment: donationAmount },
+          withdrawableFunds: { increment: creatorAmount },
+        },
+      });
     }
 
     return res.status(201).json({

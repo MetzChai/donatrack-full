@@ -1,9 +1,8 @@
 {
-  "/campaigns/[id]/page": "app/campaigns/[id]/page.js",
-  "/about/page": "app/about/page.js",
+  "/donate-history/page": "app/donate-history/page.js",
   "/auth/login/page": "app/auth/login/page.js",
-  "/donate-success/page": "app/donate-success/page.js",
-  "/campaigns/page": "app/campaigns/page.js",
-  "/user/page": "app/user/page.js",
-  "/transparency/page": "app/transparency/page.js"
+  "/admin/page": "app/admin/page.js",
+  "/withdrawals/page": "app/withdrawals/page.js",
+  "/transparency/page": "app/transparency/page.js",
+  "/campaigns/ended/page": "app/campaigns/ended/page.js"
 }

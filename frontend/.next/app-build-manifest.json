@@ -26,11 +26,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/campaigns/ended/page.js"
     ],
-    "/transparency/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/transparency/page.js"
-    ],
     "/withdrawals/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -41,10 +36,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/donate-history/page.js"
     ],
-    "/about/page": [
+    "/transparency/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/about/page.js"
+      "static/chunks/app/transparency/page.js"
+    ],
+    "/auth/register/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/auth/register/page.js"
     ],
     "/campaigns/[id]/page": [
       "static/chunks/webpack.js",

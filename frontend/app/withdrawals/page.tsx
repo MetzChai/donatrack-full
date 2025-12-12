@@ -24,10 +24,10 @@ export default function WithdrawalsPage() {
       try {
         const [mine, all] = await Promise.all([
           getMyWithdrawals(authToken),
-          user.role === "ADMIN" ? getWithdrawals(authToken) : Promise.resolve([]),
+          getWithdrawals(authToken), // now visible to all authenticated users
         ]);
-        setMyWithdrawals(mine);
-        setAllWithdrawals(all);
+        setMyWithdrawals(mine || []);
+        setAllWithdrawals(all || []);
       } catch (err) {
         console.error("Failed to fetch withdrawals", err);
       } finally {
@@ -50,10 +50,10 @@ export default function WithdrawalsPage() {
       await updateWithdrawalStatus(id, status, authToken);
       const [mine, all] = await Promise.all([
         getMyWithdrawals(authToken),
-        user?.role === "ADMIN" ? getWithdrawals(authToken) : Promise.resolve([]),
+        getWithdrawals(authToken),
       ]);
-      setMyWithdrawals(mine);
-      setAllWithdrawals(all);
+      setMyWithdrawals(mine || []);
+      setAllWithdrawals(all || []);
     } catch (err) {
       alert("Failed to update withdrawal status");
     } finally {
@@ -91,10 +91,14 @@ export default function WithdrawalsPage() {
                 </td>
                 <td className="px-6 py-4">
                   {showUser ? (
-                    <>
-                      <span className="font-medium">{w.user.fullName || "Unknown"}</span>
-                      <span className="text-sm text-gray-500 block">{w.user.email}</span>
-                    </>
+                    w.user ? (
+                      <>
+                        <span className="font-medium">{w.user.fullName || "Unknown"}</span>
+                        <span className="text-sm text-gray-500 block">{w.user.email}</span>
+                      </>
+                    ) : (
+                      <span className="text-gray-500">Unknown</span>
+                    )
                   ) : (
                     <span className="text-gray-500">You</span>
                   )}
@@ -159,15 +163,15 @@ export default function WithdrawalsPage() {
           </div>
         </div>
 
-        {user?.role === "ADMIN" && (
-          <section className="mb-10">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-2xl font-semibold">All Withdrawals</h2>
-              <span className="text-sm text-gray-600">Visible to admins</span>
-            </div>
-            {renderTable(allWithdrawals, true, true)}
-          </section>
-        )}
+        <section className="mb-10">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-2xl font-semibold">All Withdrawals</h2>
+            <span className="text-sm text-gray-600">
+              Visible to all users. Only admins can update statuses.
+            </span>
+          </div>
+          {renderTable(allWithdrawals, true, user?.role === "ADMIN")}
+        </section>
 
         <section>
           <div className="flex items-center justify-between mb-3">

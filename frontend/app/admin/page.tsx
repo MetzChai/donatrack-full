@@ -83,7 +83,8 @@ function AdminPageContent() {
       setActiveCampaigns(activeData);
       setCampaignHistory(historyData);
       setProofs(proofsData || []);
-      setAllCampaigns(campaignsData || []);
+      // Prefer admin-fetched active campaigns (with auth) plus ended history for selects
+      setAllCampaigns([...(activeData || []), ...(historyData || [])]);
       setFunds(fundsData);
     } catch (err) {
       console.error("Failed to fetch admin data", err);
@@ -415,7 +416,7 @@ function AdminPageContent() {
             {allCampaigns.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-200 mb-2">
-                  Select Campaign (optional)
+                  Select Ended Campaign (for implementation withdrawal)
                 </label>
                 <select
                   value={selectedCampaignId}
@@ -424,10 +425,10 @@ function AdminPageContent() {
                 >
                   <option value="">No specific campaign (general withdrawal)</option>
                   {allCampaigns
-                    .filter((c) => c.collected > 0)
+                    .filter((c) => c.collected > 0 && c.isEnded)
                     .map((campaign) => (
                       <option key={campaign.id} value={campaign.id}>
-                        {campaign.title} — ₱{campaign.collected.toFixed(2)} collected {campaign.isEnded ? "(Ended)" : "(Active)"}
+                        {campaign.title} — ₱{campaign.collected.toFixed(2)} collected (Ended)
                       </option>
                     ))}
                 </select>

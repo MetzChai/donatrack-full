@@ -1,26 +1,58 @@
 import { Request, Response } from "express";
 import prisma from "../services/prisma.service";
+import { calculatePlatformFee } from "../services/xendit.service";
+
+// Recalculate and persist a user's balances from completed donations minus withdrawals
+async function recalcUserBalances(userId: string) {
+  // Sum donations to campaigns owned by the user that are completed
+  const donations = await prisma.donation.findMany({
+    where: {
+      status: "COMPLETED",
+      campaign: { userId },
+    },
+    select: { amount: true },
+  });
+
+  const totalDonations = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+  const totalWithdrawable = donations.reduce(
+    (sum, d) => sum + (Number(d.amount) - calculatePlatformFee(Number(d.amount))),
+    0
+  );
+
+  // Sum all withdrawals by this user (regardless of campaign scope)
+  const withdrawals = await prisma.withdrawal.aggregate({
+    where: { userId },
+    _sum: { amount: true },
+  });
+  const totalWithdrawn = Number(withdrawals._sum.amount || 0);
+
+  const currentFunds = Math.max(totalDonations - totalWithdrawn, 0);
+  const withdrawableFunds = Math.max(totalWithdrawable - totalWithdrawn, 0);
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      currentFunds,
+      withdrawableFunds,
+    },
+    select: {
+      id: true,
+      currentFunds: true,
+      withdrawableFunds: true,
+      campaigns: {
+        select: { id: true, title: true, collected: true, goalAmount: true },
+      },
+    },
+  });
+
+  return updated;
+}
 
 // Get user's fund balance
 export const getMyFunds = async (req: any, res: Response) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: {
-        id: true,
-        currentFunds: true,
-        withdrawableFunds: true,
-        campaigns: {
-          select: {
-            id: true,
-            title: true,
-            collected: true,
-            goalAmount: true,
-          },
-        },
-      },
-    });
-
+    // Recalculate to ensure funds reflect all completed donations minus withdrawals
+    const user = await recalcUserBalances(req.user.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     return res.json({
@@ -42,7 +74,8 @@ export const withdrawFunds = async (req: any, res: Response) => {
       return res.status(400).json({ error: "Invalid withdrawal amount" });
     }
 
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    // Recalculate balances before validating withdrawal limits
+    const user = await recalcUserBalances(req.user.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     if (user.withdrawableFunds < amount) {
@@ -58,6 +91,11 @@ export const withdrawFunds = async (req: any, res: Response) => {
 
       if (!campaign) {
         return res.status(404).json({ error: "Campaign not found" });
+      }
+
+      // Allow withdrawals only after campaign is ended (implementation stage)
+      if (!campaign.isEnded) {
+        return res.status(400).json({ error: "Campaign must be ended before withdrawing for implementation" });
       }
 
       // Only campaign creator or admin can withdraw from their campaign

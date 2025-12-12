@@ -75,7 +75,7 @@ export default function Header() {
                 >
                   Transparency
                 </Link>
-                {(user.role === "ADMIN" || user.role === "CREATOR") && (
+                {user && (
                   <Link
                     href="/withdrawals"
                     className={`pb-1 ${

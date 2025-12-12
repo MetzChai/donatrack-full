@@ -70,7 +70,42 @@ export const deleteUser = async (req: any, res: Response) => {
       return res.status(400).json({ error: "Cannot delete yourself" });
     }
 
-    await prisma.user.delete({ where: { id } });
+    // Gather campaigns owned by this user to clean up dependent records
+    const ownedCampaigns = await prisma.campaign.findMany({
+      where: { userId: id },
+      select: { id: true },
+    });
+    const ownedCampaignIds = ownedCampaigns.map((c) => c.id);
+
+    // Delete dependent records first to satisfy foreign keys
+    await prisma.$transaction([
+      // Donations made by the user or to their campaigns
+      prisma.donation.deleteMany({
+        where: {
+          OR: [
+            { userId: id },
+            { campaignId: { in: ownedCampaignIds } },
+          ],
+        },
+      }),
+      // Withdrawals requested by the user or tied to their campaigns
+      prisma.withdrawal.deleteMany({
+        where: {
+          OR: [
+            { userId: id },
+            { campaignId: { in: ownedCampaignIds } },
+          ],
+        },
+      }),
+      // Proofs for campaigns they own
+      prisma.proof.deleteMany({
+        where: { campaignId: { in: ownedCampaignIds } },
+      }),
+      // Campaigns owned by the user
+      prisma.campaign.deleteMany({ where: { userId: id } }),
+      // Finally, delete the user
+      prisma.user.delete({ where: { id } }),
+    ]);
 
     return res.json({ message: "User deleted successfully" });
   } catch (err) {
@@ -156,8 +191,13 @@ export const deleteCampaign = async (req: any, res: Response) => {
       return res.status(400).json({ error: "Cannot delete ended campaigns. They are part of history." });
     }
 
-    // Delete the campaign (this will cascade delete donations due to foreign key)
-    await prisma.campaign.delete({ where: { id } });
+    // Explicitly remove dependents first to avoid foreign key violations
+    await prisma.$transaction([
+      prisma.donation.deleteMany({ where: { campaignId: id } }),
+      prisma.proof.deleteMany({ where: { campaignId: id } }),
+      prisma.withdrawal.deleteMany({ where: { campaignId: id } }),
+      prisma.campaign.delete({ where: { id } }),
+    ]);
 
     return res.json({ message: "Campaign deleted successfully" });
   } catch (err) {
