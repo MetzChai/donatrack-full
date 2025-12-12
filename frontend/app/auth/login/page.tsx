@@ -150,7 +150,7 @@ function LoginPageContent() {
   return (
     <main className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold mb-2 text-gray-800">Welcome Back</h1>
+        <h1 className="text-3xl font-bold mb-2 text-gray-800">Welcome to DONATRACK</h1>
         <p className="text-gray-600 mb-6">Log in to track your impact</p>
 
         <form onSubmit={handleLogin} className="space-y-4">

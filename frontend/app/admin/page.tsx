@@ -871,7 +871,6 @@ function AdminPageContent() {
             >
               <option value="USER">USER</option>
               <option value="ADMIN">ADMIN</option>
-              <option value="CREATOR">CREATOR</option>
             </select>
             <div className="flex gap-2">
               <button

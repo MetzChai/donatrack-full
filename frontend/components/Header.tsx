@@ -15,7 +15,7 @@ export default function Header() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="bg-purple-900 text-white">
+    <header className="bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-3">
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-2">
@@ -33,14 +33,14 @@ export default function Header() {
         {/* Navigation Bar */}
         {user && (
           <>
-            <div className="flex justify-between items-center border-t border-purple-800 pt-2">
-              <nav className="flex space-x-6 text-xl font-medium">
+            <div className="flex justify-between items-center border-t border-[#73E6CB] pt-2">
+              <nav className="flex space-x-6 text-xl font-medium text-white">
                 <Link
                   href="/"
                   className={`pb-1 ${
                     isActive("/")
-                      ? "border-b-2 border-green-500 text-white"
-                      : "hover:text-gray-300"
+                      ? "border-b-2 border-[#73E6CB] text-white"
+                      : "hover:text-white text-white"
                   }`}
                 >
                   Home
@@ -49,8 +49,8 @@ export default function Header() {
                   href="/donate-history"
                   className={`pb-1 ${
                     isActive("/donate-history")
-                      ? "border-b-2 border-green-500 text-white"
-                      : "hover:text-gray-300"
+                      ? "border-b-2 border-[#73E6CB] text-white"
+                      : "hover:text-white text-white"
                   }`}
                 >
                   Donations
@@ -59,8 +59,8 @@ export default function Header() {
                   href="/campaigns/ended"
                   className={`pb-1 ${
                     isActive("/campaigns/ended")
-                      ? "border-b-2 border-green-500 text-white"
-                      : "hover:text-gray-300"
+                      ? "border-b-2 border-[#73E6CB] text-white"
+                      : "hover:text-white text-white"
                   }`}
                 >
                   Campaign History
@@ -69,8 +69,8 @@ export default function Header() {
                   href="/transparency"
                   className={`pb-1 ${
                     isActive("/transparency")
-                      ? "border-b-2 border-green-500 text-white"
-                      : "hover:text-gray-300"
+                      ? "border-b-2 border-[#73E6CB] text-white"
+                      : "hover:text-white text-white"
                   }`}
                 >
                   Transparency
@@ -80,8 +80,8 @@ export default function Header() {
                     href="/withdrawals"
                     className={`pb-1 ${
                       isActive("/withdrawals")
-                        ? "border-b-2 border-green-500 text-white"
-                        : "hover:text-gray-300"
+                        ? "border-b-2 border-[#73E6CB] text-white"
+                        : "hover:text-white text-white"
                     }`}
                   >
                     Withdrawals
@@ -91,8 +91,8 @@ export default function Header() {
                   href="/about"
                   className={`pb-1 ${
                     isActive("/about")
-                      ? "border-b-2 border-green-500 text-white"
-                      : "hover:text-gray-300"
+                      ? "border-b-2 border-[#73E6CB]  text-white"
+                      : "hover:text-white text-white"
                   }`}
                 >
                   About Us

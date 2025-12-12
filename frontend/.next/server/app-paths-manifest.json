@@ -1,8 +1,9 @@
 {
-  "/donate-history/page": "app/donate-history/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/donate-success/page": "app/donate-success/page.js",
+  "/transparency/page": "app/transparency/page.js",
+  "/user/page": "app/user/page.js",
   "/auth/login/page": "app/auth/login/page.js",
   "/admin/page": "app/admin/page.js",
-  "/withdrawals/page": "app/withdrawals/page.js",
-  "/transparency/page": "app/transparency/page.js",
-  "/campaigns/ended/page": "app/campaigns/ended/page.js"
+  "/page": "app/page.js"
 }

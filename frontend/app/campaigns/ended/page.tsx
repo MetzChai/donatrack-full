@@ -13,9 +13,7 @@ export default function EndedCampaignsPage() {
   useEffect(() => {
     async function fetchCampaigns() {
       try {
-        console.log("Fetching ended campaigns...");
         const data = await getEndedCampaigns();
-        console.log("Ended campaigns received:", data?.length || 0);
         setCampaigns(data || []);
       } catch (err) {
         console.error("Failed to fetch ended campaigns:", err);
@@ -36,58 +34,63 @@ export default function EndedCampaignsPage() {
   if (loading) {
     return (
       <main className="p-8 min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-xl text-gray-800">Loading campaign history...</p>
+        <p className="text-xl text-gray-800 animate-pulse">Loading campaign history...</p>
       </main>
     );
   }
 
   return (
-    <main className="p-8 min-h-screen bg-gray-50">
-      <div className="container mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4 text-gray-900">Campaign History</h1>
-          <p className="text-gray-600 text-lg mb-6">
+    <main className="p-8 min-h-screen bg-gray-900">
+      <div className="container mx-auto max-w-7xl">
+        <div className="mb-10">
+          <h1 className="text-5xl font-extrabold mb-4 text-[#73E6CB] tracking-tight">
+            Campaign History
+          </h1>
+          <p className="text-white text-lg max-w-3xl">
             Browse all completed campaigns and see how donations were used to make a difference.
             Goal and collected amounts are preserved for transparency.
           </p>
 
           {/* Filter buttons */}
-          <div className="flex gap-4 mb-6">
+          <div className="flex gap-4 mt-6">
             <button
               onClick={() => setFilter("all")}
-              className={`px-6 py-2 rounded-lg font-semibold transition ${
+              className={`px-6 py-2 rounded-xl font-semibold transition shadow-sm ${
                 filter === "all"
-                  ? "bg-purple-600 text-white"
+                  ? "bg-purple-600 text-white shadow-md scale-105"
                   : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
               }`}
             >
               All Campaigns ({campaigns.length})
             </button>
+
             <button
               onClick={() => setFilter("implemented")}
-              className={`px-6 py-2 rounded-lg font-semibold transition ${
+              className={`px-6 py-2 rounded-xl font-semibold transition shadow-sm ${
                 filter === "implemented"
-                  ? "bg-green-600 text-white"
+                  ? "bg-green-600 text-white shadow-md scale-105"
                   : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
               }`}
             >
               Implemented ({campaigns.filter((c) => c.isImplemented).length})
             </button>
+
             <button
               onClick={() => setFilter("not-implemented")}
-              className={`px-6 py-2 rounded-lg font-semibold transition ${
+              className={`px-6 py-2 rounded-xl font-semibold transition shadow-sm ${
                 filter === "not-implemented"
-                  ? "bg-yellow-600 text-white"
+                  ? "bg-yellow-600 text-white shadow-md scale-105"
                   : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
               }`}
             >
-              Pending Implementation ({campaigns.filter((c) => !c.isImplemented).length})
+              Pending ({campaigns.filter((c) => !c.isImplemented).length})
             </button>
           </div>
         </div>
 
+        {/* No Campaigns */}
         {filteredCampaigns.length === 0 ? (
-          <div className="text-center py-16">
+          <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
             <p className="text-gray-500 text-lg mb-4">
               {filter === "all"
                 ? "No completed campaigns yet."
@@ -103,18 +106,23 @@ export default function EndedCampaignsPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredCampaigns.map((campaign: any) => (
-              <div key={campaign.id} className="relative">
+              <div
+                key={campaign.id}
+                className="relative transform transition duration-300 hover:scale-[1.02]"
+              >
                 <CampaignCard campaign={campaign} />
+
                 {campaign.isImplemented && (
-                  <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                  <div className="absolute top-4 right-4 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
                     ✓ Implemented
                   </div>
                 )}
+
                 {campaign.isEnded && !campaign.isImplemented && (
-                  <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
-                    Implementation Pending
+                  <div className="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+                    Pending
                   </div>
                 )}
               </div>
@@ -125,4 +133,3 @@ export default function EndedCampaignsPage() {
     </main>
   );
 }
-

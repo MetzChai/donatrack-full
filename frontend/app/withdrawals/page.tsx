@@ -17,14 +17,13 @@ export default function WithdrawalsPage() {
     const token = localStorage.getItem("token");
     if (!token || !user) return;
 
-    // TypeScript guard: token is confirmed to be string at this point
     const authToken: string = token;
 
     async function fetchData() {
       try {
         const [mine, all] = await Promise.all([
           getMyWithdrawals(authToken),
-          getWithdrawals(authToken), // now visible to all authenticated users
+          getWithdrawals(authToken),
         ]);
         setMyWithdrawals(mine || []);
         setAllWithdrawals(all || []);
@@ -41,10 +40,9 @@ export default function WithdrawalsPage() {
   const handleStatusUpdate = async (id: string, status: string) => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    
-    // TypeScript guard: token is confirmed to be string at this point
+
     const authToken: string = token;
-    
+
     try {
       setUpdatingId(id);
       await updateWithdrawalStatus(id, status, authToken);
@@ -62,50 +60,77 @@ export default function WithdrawalsPage() {
   };
 
   const renderTable = (rows: any[], showUser: boolean, allowActions: boolean) => {
-    if (!rows.length) return <p className="text-gray-600">No withdrawals found.</p>;
+    if (!rows.length)
+      return <p className="text-white text-center py-4">No withdrawals found.</p>;
+
     return (
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto bg-white rounded-xl shadow-md border border-gray-200 transition hover:shadow-lg">
+        <table className="min-w-full divide-y divide-gray-200 text-gray-900">
+          <thead className="bg-gray-300">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Campaign</th>
-              {showUser && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              {allowActions && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                Amount
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                Campaign
+              </th>
+              {showUser && (
+                <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                  User
+                </th>
+              )}
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                Date
+              </th>
+              {allowActions && (
+                <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 text-gray-900">
+
+          <tbody className="divide-y divide-gray-200">
             {rows.map((w) => (
-              <tr key={w.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-semibold">₱{w.amount.toFixed(2)}</td>
+              <tr key={w.id} className="hover:bg-gray-50 transition">
+                <td className="px-6 py-4 font-semibold text-black">₱{w.amount.toFixed(2)}</td>
+
                 <td className="px-6 py-4">
                   {w.campaign ? (
-                    <Link href={`/campaigns/${w.campaign.id}`} className="text-blue-600 hover:text-blue-800">
+                    <Link
+                      href={`/campaigns/${w.campaign.id}`}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
                       {w.campaign.title}
                     </Link>
                   ) : (
                     <span className="text-gray-500">General withdrawal</span>
                   )}
                 </td>
+
                 <td className="px-6 py-4">
                   {showUser ? (
                     w.user ? (
                       <>
-                        <span className="font-medium">{w.user.fullName || "Unknown"}</span>
-                        <span className="text-sm text-gray-500 block">{w.user.email}</span>
+                        <span className="font-medium text-gray-900">
+                          {w.user.fullName || "Unknown"}
+                        </span>
+                        <span className="text-sm text-black block">{w.user.email}</span>
                       </>
                     ) : (
-                      <span className="text-gray-500">Unknown</span>
+                      <span className="text-black">Unknown</span>
                     )
                   ) : (
-                    <span className="text-gray-500">You</span>
+                    <span className="text-black">You</span>
                   )}
                 </td>
+
                 <td className="px-6 py-4">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    className={`px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
                       w.status === "COMPLETED"
                         ? "bg-green-100 text-green-800"
                         : w.status === "FAILED"
@@ -116,20 +141,25 @@ export default function WithdrawalsPage() {
                     {w.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{new Date(w.createdAt).toLocaleString()}</td>
+
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {new Date(w.createdAt).toLocaleString()}
+                </td>
+
                 {allowActions && (
-                  <td className="px-6 py-4 text-sm text-gray-600 space-x-2">
+                  <td className="px-6 py-4 space-x-2">
                     <button
                       disabled={updatingId === w.id || w.status === "COMPLETED"}
                       onClick={() => handleStatusUpdate(w.id, "COMPLETED")}
-                      className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded"
+                      className="bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white px-3 py-1 rounded-md text-sm shadow"
                     >
                       Mark Paid
                     </button>
+
                     <button
                       disabled={updatingId === w.id || w.status === "FAILED"}
                       onClick={() => handleStatusUpdate(w.id, "FAILED")}
-                      className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-3 py-1 rounded"
+                      className="bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-3 py-1 rounded-md text-sm shadow"
                     >
                       Mark Failed
                     </button>
@@ -147,7 +177,7 @@ export default function WithdrawalsPage() {
     return (
       <ProtectedPage>
         <main className="p-8 min-h-screen flex items-center justify-center bg-gray-100">
-          <p className="text-xl text-gray-800">Loading...</p>
+          <p className="text-xl text-gray-800 animate-pulse">Loading...</p>
         </main>
       </ProtectedPage>
     );
@@ -155,40 +185,46 @@ export default function WithdrawalsPage() {
 
   return (
     <ProtectedPage>
-      <main className="p-8 min-h-screen bg-gray-100 text-gray-900">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Withdrawal History</h1>
-            <p className="text-gray-600">Review all withdrawals and campaign-specific deductions.</p>
+      <main className="bg-gray-900 min-h-screen py-12">
+        {/* ⭐ Added container */}
+        <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-black-900">
+          <div className="mb-10">
+            <h1 className="text-[#73E6CB] text-4xl font-bold tracking-tight mb-2">Withdrawal History</h1>
+            <p className="text-white text-lg">
+              Review all withdrawals and campaign-specific deductions.
+            </p>
           </div>
+
+          {/* ALL WITHDRAWALS */}
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[#73E6CB] text-2xl font-semibold">All Withdrawals</h2>
+              <span className="text-sm text-white">
+                Visible to all users. Only admins can update statuses.
+              </span>
+            </div>
+
+            {renderTable(allWithdrawals, true, user?.role === "ADMIN")}
+          </section>
+
+          {/* MY WITHDRAWALS */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[#73E6CB] text-2xl font-semibold">My Withdrawals</h2>
+              <span className="text-sm text-white">Visible to you</span>
+            </div>
+
+            {renderTable(
+              myWithdrawals.map((w) => ({
+                ...w,
+                user: null,
+              })),
+              false,
+              false
+            )}
+          </section>
         </div>
-
-        <section className="mb-10">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-2xl font-semibold">All Withdrawals</h2>
-            <span className="text-sm text-gray-600">
-              Visible to all users. Only admins can update statuses.
-            </span>
-          </div>
-          {renderTable(allWithdrawals, true, user?.role === "ADMIN")}
-        </section>
-
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-2xl font-semibold">My Withdrawals</h2>
-            <span className="text-sm text-gray-600">Visible to you</span>
-          </div>
-          {renderTable(
-            myWithdrawals.map((w) => ({
-              ...w,
-              user: null, // simplify display for self
-            })),
-            false,
-            false
-          )}
-        </section>
       </main>
     </ProtectedPage>
   );
 }
-

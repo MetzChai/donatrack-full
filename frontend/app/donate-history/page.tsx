@@ -51,40 +51,40 @@ function DonateHistoryContent() {
   const isAdmin = user?.role === "ADMIN";
 
   return (
-    <main className="p-8 min-h-screen bg-gray-100 text-gray-900">
-      <h1 className="text-3xl md:text-4xl font-bold mb-6 text-gray-800">
+    <main className="p-8 min-h-screen bg-gray-900 text-gray-900">
+      <h1 className="text-3xl md:text-4xl font-bold mb-6 text-[#73E6CB]">
         {isAdmin ? "All User Donations" : "Your Recent Donations"}
       </h1>
       {logs.length === 0 ? (
-        <p className="text-gray-600 text-lg">
+        <p className="text-white text-lg">
           {isAdmin ? "No donations recorded yet." : "No donations yet."}
         </p>
       ) : (
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
           <table className="min-w-full divide-y divide-gray-200 text-gray-900">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-300">
               <tr>
-                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-black uppercase tracking-wider">
                   Date
                 </th>
                 {isAdmin && (
-                  <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-black uppercase tracking-wider">
                     Donor
                   </th>
                 )}
-                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-black uppercase tracking-wider">
                   Campaign
                 </th>
-                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-black uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-black uppercase tracking-wider">
                   Method
                 </th>
-                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-black uppercase tracking-wider">
                   Message
                 </th>
-                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-sm md:text-base font-semibold text-black uppercase tracking-wider">
                   Status
                 </th>
               </tr>
