@@ -17,13 +17,22 @@ const getBaseURL = (): string => {
   }
   
   // In production, NEXT_PUBLIC_API_URL must be set
-  if (process.env.NODE_ENV === 'production') {
-    console.error(
-      '❌ NEXT_PUBLIC_API_URL is not set! ' +
-      'Please set this environment variable in Vercel to your backend API URL.'
-    );
-    // Fallback to empty string to prevent crashes, but requests will fail
-    return '';
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+    // Client-side production: throw a clear error
+    const errorMsg = 
+      '❌ Configuration Error: NEXT_PUBLIC_API_URL is not set!\n\n' +
+      'This environment variable must be configured in Vercel:\n' +
+      '1. Go to your Vercel project dashboard\n' +
+      '2. Navigate to Settings → Environment Variables\n' +
+      '3. Add NEXT_PUBLIC_API_URL with your backend API URL\n' +
+      '4. Redeploy your application\n\n' +
+      'Current environment: Production\n' +
+      'This error occurs because the frontend cannot determine where to send API requests.';
+    
+    console.error(errorMsg);
+    // Return a placeholder that will clearly fail, rather than empty string
+    // This prevents Next.js from trying to handle it as a route
+    return 'https://MISSING_API_URL_CONFIGURATION';
   }
   
   // Development default
