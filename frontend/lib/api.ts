@@ -1,8 +1,82 @@
 import axios from "axios";
 
+/**
+ * Get the base URL for API requests
+ * 
+ * Priority:
+ * 1. NEXT_PUBLIC_API_URL environment variable (set in Vercel)
+ * 2. In production without env var, throw error (must be configured)
+ * 3. In development, default to localhost
+ */
+const getBaseURL = (): string => {
+  // Check if NEXT_PUBLIC_API_URL is set (required for production)
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    const url = process.env.NEXT_PUBLIC_API_URL.trim();
+    // Remove trailing slash if present
+    return url.endsWith('/') ? url.slice(0, -1) : url;
+  }
+  
+  // In production, NEXT_PUBLIC_API_URL must be set
+  if (process.env.NODE_ENV === 'production') {
+    console.error(
+      '❌ NEXT_PUBLIC_API_URL is not set! ' +
+      'Please set this environment variable in Vercel to your backend API URL.'
+    );
+    // Fallback to empty string to prevent crashes, but requests will fail
+    return '';
+  }
+  
+  // Development default
+  return 'http://localhost:4000';
+};
+
 export const API = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000", // backend URL
+  baseURL: getBaseURL(),
+  timeout: 30000, // 30 second timeout
 });
+
+// Add request interceptor for debugging
+API.interceptors.request.use(
+  (config) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    }
+    return config;
+  },
+  (error) => {
+    console.error('❌ API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for error handling
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      // Server responded with error status
+      if (error.response.status === 404) {
+        console.error(
+          `❌ NOT_FOUND Error: ${error.config?.method?.toUpperCase()} ${error.config?.url}\n` +
+          `This usually means:\n` +
+          `1. The backend API is not running or not accessible\n` +
+          `2. NEXT_PUBLIC_API_URL is incorrect (current: ${getBaseURL()})\n` +
+          `3. The API route doesn't exist on the backend`
+        );
+      }
+    } else if (error.request) {
+      // Request was made but no response received
+      console.error(
+        `❌ Network Error: Could not reach backend API at ${getBaseURL()}\n` +
+        `Please check:\n` +
+        `1. Is the backend server running?\n` +
+        `2. Is NEXT_PUBLIC_API_URL set correctly?\n` +
+        `3. Are CORS settings configured on the backend?`
+      );
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Add token to requests
 const getAuthHeaders = (token?: string) => {
