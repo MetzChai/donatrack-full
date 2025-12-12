@@ -55,24 +55,46 @@ export const getEndedCampaigns = async (_req: Request, res: Response) => {
         // Fetch proofs separately using raw SQL to handle old schema
         for (const campaign of campaigns) {
           try {
-            const rawProofs = await prisma.$queryRawUnsafe<any[]>(
-              `SELECT p.*, 
-                      CASE 
-                        WHEN p."imageUrls" IS NOT NULL THEN p."imageUrls"
-                        WHEN p."imageUrl" IS NOT NULL THEN ARRAY[p."imageUrl"]
-                        ELSE ARRAY[]::TEXT[]
-                      END as "imageUrls"
-               FROM "Proof" p
-               WHERE p."campaignId" = $1
-               ORDER BY p."createdAt" DESC`,
-              campaign.id
+            // First check if imageUrls column exists
+            const columnCheck = await prisma.$queryRawUnsafe<any[]>(
+              `SELECT column_name 
+               FROM information_schema.columns 
+               WHERE table_name = 'Proof' AND column_name = 'imageUrls'`
             );
+            
+            const hasImageUrlsColumn = columnCheck && columnCheck.length > 0;
+            
+            let rawProofs: any[];
+            if (hasImageUrlsColumn) {
+              // New schema: use imageUrls column
+              rawProofs = await prisma.$queryRawUnsafe<any[]>(
+                `SELECT p.id, p.title, p.description, p."createdAt", p."updatedAt", p."campaignId",
+                        COALESCE(p."imageUrls", ARRAY[]::TEXT[]) as "imageUrls"
+                 FROM "Proof" p
+                 WHERE p."campaignId" = $1
+                 ORDER BY p."createdAt" DESC`,
+                campaign.id
+              );
+            } else {
+              // Old schema: use imageUrl column and convert to array
+              rawProofs = await prisma.$queryRawUnsafe<any[]>(
+                `SELECT p.id, p.title, p.description, p."createdAt", p."updatedAt", p."campaignId",
+                        CASE 
+                          WHEN p."imageUrl" IS NOT NULL THEN ARRAY[p."imageUrl"]
+                          ELSE ARRAY[]::TEXT[]
+                        END as "imageUrls"
+                 FROM "Proof" p
+                 WHERE p."campaignId" = $1
+                 ORDER BY p."createdAt" DESC`,
+                campaign.id
+              );
+            }
             
             campaign.proofs = (rawProofs || []).map((proof: any) => ({
               id: proof.id,
               title: proof.title,
               description: proof.description,
-              imageUrls: proof.imageUrls || (proof.imageUrl ? [proof.imageUrl] : []),
+              imageUrls: proof.imageUrls || [],
               createdAt: proof.createdAt,
               updatedAt: proof.updatedAt,
               campaignId: proof.campaignId,

@@ -35,31 +35,54 @@ export const getAllProofs = async (_req: Request, res: Response) => {
       // Continue to try fetching anyway
     }
     
+    // Check if imageUrls column exists before attempting Prisma query
+    let hasImageUrlsColumn = false;
     try {
-      // Try to fetch with new schema (imageUrls)
-      proofs = await prisma.proof.findMany({
-        include: {
-          campaign: {
-            select: {
-              id: true,
-              title: true,
-              description: true,
-              imageUrl: true,
+      const columnCheck = await prisma.$queryRawUnsafe<any[]>(
+        `SELECT column_name 
+         FROM information_schema.columns 
+         WHERE table_name = 'Proof' AND column_name = 'imageUrls'`
+      );
+      hasImageUrlsColumn = columnCheck && columnCheck.length > 0;
+    } catch (checkError: any) {
+      // If check fails, assume old schema and use raw SQL
+      console.log("Could not check column existence, using raw SQL");
+    }
+    
+    try {
+      // Only try Prisma query if schema matches (imageUrls column exists)
+      if (hasImageUrlsColumn) {
+        proofs = await prisma.proof.findMany({
+          include: {
+            campaign: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                imageUrl: true,
+              },
             },
           },
-        },
-        orderBy: { createdAt: "desc" },
-      });
-      console.log(`✓ Fetched ${proofs.length} proofs using Prisma query`);
+          orderBy: { createdAt: "desc" },
+        });
+        console.log(`✓ Fetched ${proofs.length} proofs using Prisma query`);
+      } else {
+        // Schema mismatch - skip Prisma query and use raw SQL directly
+        throw new Error("Schema mismatch - using raw SQL");
+      }
     } catch (prismaError: any) {
-      // If Prisma query fails, try raw SQL
-      console.warn("✗ Prisma query failed, trying raw SQL:", prismaError.message);
-      console.warn("Error code:", prismaError.code);
+      // If Prisma query fails or schema doesn't match, use raw SQL
+      if (!hasImageUrlsColumn) {
+        console.log("Using raw SQL due to schema mismatch (imageUrl vs imageUrls)");
+      } else {
+        console.warn("✗ Prisma query failed, trying raw SQL:", prismaError.message);
+      }
       
       try {
-        // First try with imageUrls (new schema)
+        // Check which column exists and use appropriate query
         let rawProofs: any[];
-        try {
+        if (hasImageUrlsColumn) {
+          // New schema: use imageUrls column
           rawProofs = await prisma.$queryRawUnsafe<any[]>(`
             SELECT 
               p.id,
@@ -68,7 +91,7 @@ export const getAllProofs = async (_req: Request, res: Response) => {
               p."createdAt",
               p."updatedAt",
               p."campaignId",
-              p."imageUrls",
+              COALESCE(p."imageUrls", ARRAY[]::TEXT[]) as "imageUrls",
               c.id as "campaign_id",
               c.title as "campaign_title",
               c.description as "campaign_description",
@@ -78,31 +101,29 @@ export const getAllProofs = async (_req: Request, res: Response) => {
             ORDER BY p."createdAt" DESC
           `);
           console.log(`Raw SQL (imageUrls) returned ${rawProofs?.length || 0} rows`);
-        } catch (imageUrlsError: any) {
-          // If imageUrls column doesn't exist, try with imageUrl (old schema)
-          if (imageUrlsError.message?.includes('imageUrls') || imageUrlsError.code === '42703') {
-            console.log("imageUrls column not found, using imageUrl column (old schema)");
-            rawProofs = await prisma.$queryRawUnsafe<any[]>(`
-              SELECT 
-                p.id,
-                p.title,
-                p.description,
-                p."createdAt",
-                p."updatedAt",
-                p."campaignId",
-                p."imageUrl",
-                c.id as "campaign_id",
-                c.title as "campaign_title",
-                c.description as "campaign_description",
-                c."imageUrl" as "campaign_imageUrl"
-              FROM "Proof" p
-              LEFT JOIN "Campaign" c ON p."campaignId" = c.id
-              ORDER BY p."createdAt" DESC
-            `);
-            console.log(`Raw SQL (imageUrl) returned ${rawProofs?.length || 0} rows`);
-          } else {
-            throw imageUrlsError;
-          }
+        } else {
+          // Old schema: use imageUrl column and convert to array
+          rawProofs = await prisma.$queryRawUnsafe<any[]>(`
+            SELECT 
+              p.id,
+              p.title,
+              p.description,
+              p."createdAt",
+              p."updatedAt",
+              p."campaignId",
+              CASE 
+                WHEN p."imageUrl" IS NOT NULL THEN ARRAY[p."imageUrl"]
+                ELSE ARRAY[]::TEXT[]
+              END as "imageUrls",
+              c.id as "campaign_id",
+              c.title as "campaign_title",
+              c.description as "campaign_description",
+              c."imageUrl" as "campaign_imageUrl"
+            FROM "Proof" p
+            LEFT JOIN "Campaign" c ON p."campaignId" = c.id
+            ORDER BY p."createdAt" DESC
+          `);
+          console.log(`Raw SQL (imageUrl) returned ${rawProofs?.length || 0} rows`);
         }
         
         proofs = (rawProofs || []).map((row: any) => ({
