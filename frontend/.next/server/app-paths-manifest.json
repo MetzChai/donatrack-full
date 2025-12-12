@@ -1,7 +1,8 @@
 {
   "/campaigns/ended/page": "app/campaigns/ended/page.js",
-  "/transparency/page": "app/transparency/page.js",
   "/withdrawals/page": "app/withdrawals/page.js",
+  "/transparency/page": "app/transparency/page.js",
   "/about/page": "app/about/page.js",
-  "/admin/page": "app/admin/page.js"
+  "/admin/page": "app/admin/page.js",
+  "/donate-history/page": "app/donate-history/page.js"
 }
